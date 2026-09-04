@@ -43,6 +43,22 @@ export function isActiveRequest(status: string): boolean {
   return (OPEN_STATUSES as readonly string[]).includes(status)
 }
 
+export type PortfolioBucket = 'new' | 'ready_for_allocation' | 'allocated' | 'in_progress' | 'at_risk' | 'completed'
+
+const BUCKET_ORDER: PortfolioBucket[] = ['new', 'ready_for_allocation', 'allocated', 'in_progress', 'at_risk', 'completed']
+
+export function portfolioBucket(status: string): PortfolioBucket | null {
+  if (status === 'draft' || status === 'submitted' || status === 'under_review') return 'new'
+  if (status === 'ready_for_allocation') return 'ready_for_allocation'
+  if (status === 'allocated') return 'allocated'
+  if (status === 'in_progress') return 'in_progress'
+  if (status === 'at_risk') return 'at_risk'
+  if (status === 'completed') return 'completed'
+  return null // cancelled requests sit outside the kanban/portfolio flow
+}
+
+export { BUCKET_ORDER }
+
 export function isUnallocated(request: WorkRequest, assignments: Assignment[]): boolean {
   const hasActiveAssignment = assignments.some((a) => a.request_id === request.id && a.status !== 'cancelled')
   return (UNALLOCATED_STATUSES as readonly string[]).includes(request.status) && !hasActiveAssignment

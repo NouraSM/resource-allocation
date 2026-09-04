@@ -2,11 +2,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import type {
+  AuditLog,
   Assignment,
   Deliverable,
   HistoricalProject,
   Notification,
   Organization,
+  Profile,
   Resource,
   ResourceAvailability,
   ResourceSkill,
@@ -30,6 +32,8 @@ export interface OrgData {
   risks: Risk[]
   deliverables: Deliverable[]
   notifications: Notification[]
+  profiles: Profile[]
+  auditLogs: AuditLog[]
   orgSettings: ReturnType<typeof mapOrgSettings>
   engineResources: ReturnType<typeof mapEngineResource>[]
   engineAssignments: ReturnType<typeof mapEngineAssignment>[]
@@ -60,27 +64,56 @@ export function useOrgData() {
     setError(null)
 
     async function load() {
-      const [orgRes, resourcesRes, resourceSkillsRes, skillsRes, requestsRes, requestSkillsRes, assignmentsRes, availabilityRes, historyRes, risksRes, deliverablesRes, notificationsRes] =
-        await Promise.all([
-          supabase.from('organizations').select('*').eq('id', profile!.organization_id).single(),
-          supabase.from('resources').select('*').eq('organization_id', profile!.organization_id).order('full_name'),
-          supabase.from('resource_skills').select('*').eq('organization_id', profile!.organization_id),
-          supabase.from('skills').select('*').eq('organization_id', profile!.organization_id).order('name'),
-          supabase.from('work_requests').select('*').eq('organization_id', profile!.organization_id).order('priority_score', { ascending: false }),
-          supabase.from('request_skills').select('*').eq('organization_id', profile!.organization_id),
-          supabase.from('assignments').select('*').eq('organization_id', profile!.organization_id),
-          supabase.from('resource_availability').select('*').eq('organization_id', profile!.organization_id),
-          supabase.from('historical_projects').select('*').eq('organization_id', profile!.organization_id),
-          supabase.from('risks').select('*').eq('organization_id', profile!.organization_id).eq('active', true),
-          supabase.from('deliverables').select('*').eq('organization_id', profile!.organization_id),
-          supabase.from('notifications').select('*').eq('organization_id', profile!.organization_id).order('created_at', { ascending: false }),
-        ])
+      const [
+        orgRes,
+        resourcesRes,
+        resourceSkillsRes,
+        skillsRes,
+        requestsRes,
+        requestSkillsRes,
+        assignmentsRes,
+        availabilityRes,
+        historyRes,
+        risksRes,
+        deliverablesRes,
+        notificationsRes,
+        profilesRes,
+        auditLogsRes,
+      ] = await Promise.all([
+        supabase.from('organizations').select('*').eq('id', profile!.organization_id).single(),
+        supabase.from('resources').select('*').eq('organization_id', profile!.organization_id).order('full_name'),
+        supabase.from('resource_skills').select('*').eq('organization_id', profile!.organization_id),
+        supabase.from('skills').select('*').eq('organization_id', profile!.organization_id).order('name'),
+        supabase.from('work_requests').select('*').eq('organization_id', profile!.organization_id).order('priority_score', { ascending: false }),
+        supabase.from('request_skills').select('*').eq('organization_id', profile!.organization_id),
+        supabase.from('assignments').select('*').eq('organization_id', profile!.organization_id),
+        supabase.from('resource_availability').select('*').eq('organization_id', profile!.organization_id),
+        supabase.from('historical_projects').select('*').eq('organization_id', profile!.organization_id),
+        supabase.from('risks').select('*').eq('organization_id', profile!.organization_id).eq('active', true),
+        supabase.from('deliverables').select('*').eq('organization_id', profile!.organization_id),
+        supabase.from('notifications').select('*').eq('organization_id', profile!.organization_id).order('created_at', { ascending: false }),
+        supabase.from('profiles').select('*').eq('organization_id', profile!.organization_id).order('full_name'),
+        supabase.from('audit_logs').select('*').eq('organization_id', profile!.organization_id).order('created_at', { ascending: false }).limit(500),
+      ])
 
       if (!active) return
 
-      const firstError = [orgRes, resourcesRes, resourceSkillsRes, skillsRes, requestsRes, requestSkillsRes, assignmentsRes, availabilityRes, historyRes, risksRes, deliverablesRes, notificationsRes].find(
-        (r) => r.error,
-      )?.error
+      const firstError = [
+        orgRes,
+        resourcesRes,
+        resourceSkillsRes,
+        skillsRes,
+        requestsRes,
+        requestSkillsRes,
+        assignmentsRes,
+        availabilityRes,
+        historyRes,
+        risksRes,
+        deliverablesRes,
+        notificationsRes,
+        profilesRes,
+        auditLogsRes,
+      ].find((r) => r.error)?.error
       if (firstError) {
         setError(firstError.message)
         setLoading(false)
@@ -107,6 +140,8 @@ export function useOrgData() {
         risks: (risksRes.data ?? []) as Risk[],
         deliverables: (deliverablesRes.data ?? []) as Deliverable[],
         notifications: (notificationsRes.data ?? []) as Notification[],
+        profiles: (profilesRes.data ?? []) as Profile[],
+        auditLogs: (auditLogsRes.data ?? []) as AuditLog[],
         orgSettings: mapOrgSettings(org),
         engineResources: resources.map((r) => mapEngineResource(r, resourceSkills)),
         engineAssignments: assignments.map(mapEngineAssignment),
