@@ -295,6 +295,10 @@ during development (migrations + seed apply cleanly; the notification triggers w
 exercised directly). We recommend `supabase test db` (pgTAP) for CI once the project is
 linked to a Supabase instance.
 
+`scripts/test-db/00_auth_stub.sql` is the minimal `auth.users`/`auth.identities`/`auth.uid()`
+stand-in used for that manual smoke test against a plain Postgres server (real Supabase
+projects already provide the real `auth` schema, so this file is never needed there).
+
 ## Implemented features
 
 - Command Center with 8 KPIs, Executive Attention, upcoming deadlines, department
