@@ -3,6 +3,39 @@ import type { EngineAssignment, EngineAvailability, EngineResource, OrgSettings 
 import { calculateCapacity, utilizationStatus } from './capacity'
 import { requiresExecutiveAttention } from './risk'
 
+export interface WeeklyCapacityPoint {
+  weekStart: string
+  utilization: number
+  availableCapacityHours: number
+  grossCapacityHours: number
+}
+
+/** A rolling weekly capacity/utilization series, used for "upcoming capacity" charts on a resource profile. */
+export function weeklyCapacitySeries(
+  resource: EngineResource,
+  org: OrgSettings,
+  assignments: EngineAssignment[],
+  availability: EngineAvailability[],
+  from: Date,
+  weeks = 6,
+): WeeklyCapacityPoint[] {
+  const points: WeeklyCapacityPoint[] = []
+  for (let i = 0; i < weeks; i++) {
+    const weekStart = new Date(from)
+    weekStart.setDate(weekStart.getDate() + i * 7)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 7)
+    const capacity = calculateCapacity({ resource, org, assignments, availability, rangeStart: weekStart, rangeEnd: weekEnd })
+    points.push({
+      weekStart: weekStart.toISOString().slice(0, 10),
+      utilization: Math.round(capacity.utilization * 1000) / 10,
+      availableCapacityHours: Math.round(capacity.availableCapacityHours),
+      grossCapacityHours: Math.round(capacity.grossCapacityHours),
+    })
+  }
+  return points
+}
+
 const OPEN_STATUSES = ['submitted', 'under_review', 'ready_for_allocation', 'allocated', 'in_progress', 'at_risk'] as const
 const UNALLOCATED_STATUSES = ['submitted', 'under_review', 'ready_for_allocation'] as const
 
