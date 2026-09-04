@@ -271,7 +271,7 @@ export function RequestDetail() {
             <Button className="w-full" onClick={() => navigate(`/allocation/${request.id}`)}>
               <Workflow className="h-4 w-4" />
               {t('requestDetail.generateAllocation')}
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 rtl:-scale-x-100" />
             </Button>
           )}
         </div>

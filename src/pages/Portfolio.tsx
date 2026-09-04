@@ -197,7 +197,7 @@ export function Portfolio() {
                           <p className="mb-1.5 text-[10px] text-slate-400">{formatDate(r.requested_deadline, locale)}</p>
                           {canManage && bucket === 'ready_for_allocation' && (
                             <Button size="sm" variant="outline" className="w-full" onClick={() => navigate(`/allocation/${r.id}`)}>
-                              {t('requestDetail.generateAllocation')} <ArrowRight className="h-3 w-3" />
+                              {t('requestDetail.generateAllocation')} <ArrowRight className="h-3 w-3 rtl:-scale-x-100" />
                             </Button>
                           )}
                           {canManage && action && bucket !== 'ready_for_allocation' && (

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select } from '@/components/ui/input'
 import { buildTeamScenarios } from '@/engine/teamBuilder'
+import { calculateCapacity, utilizationStatus } from '@/engine/capacity'
 import type { TeamMember, TeamScenario } from '@/engine/teamBuilder'
 import { priorityTone } from '@/lib/statusDisplay'
 import { formatDate } from '@/lib/utils'
@@ -98,10 +99,26 @@ export function AllocationWorkspace() {
         })),
       )
       .then(() => undefined)
+
+    if (request.priority_level === 'critical' || request.priority_level === 'high') {
+      supabase
+        .from('notifications')
+        .insert({
+          organization_id: profile.organization_id,
+          user_id: null,
+          notification_type: 'allocation_approval_required',
+          severity: 'info',
+          title: `${request.title} is ready for allocation review`,
+          message: 'Allocation scenarios have been generated and are waiting for approval.',
+          entity_type: 'work_request',
+          entity_id: request.id,
+        })
+        .then(() => undefined)
+    }
   }, [builderResult, persisted, profile, request])
 
   async function createAssignments(members: TeamMember[], status: 'active' = 'active') {
-    if (!profile || !request) return
+    if (!profile || !request || !data) return
     const rows = members.map((m) => ({
       organization_id: profile.organization_id,
       request_id: request.id,
@@ -117,6 +134,41 @@ export function AllocationWorkspace() {
     }))
     await supabase.from('assignments').insert(rows)
     await supabase.from('work_requests').update({ status: 'allocated' }).eq('id', request.id)
+
+    // Same capacity engine the rest of the app uses — no duplicated formula,
+    // just checking the post-approval result against the org's threshold.
+    const projectedAssignments = [
+      ...data.engineAssignments,
+      ...members.map((m) => ({
+        id: `new-${m.resourceId}`,
+        resourceId: m.resourceId,
+        requestId: request.id,
+        allocationPercentage: m.allocationPercentage,
+        allocatedHours: m.allocatedHours,
+        startDate: today.toISOString().slice(0, 10),
+        endDate: request.requested_deadline,
+        status: 'active' as const,
+      })),
+    ]
+    const fourWeeksOut = new Date(today)
+    fourWeeksOut.setDate(fourWeeksOut.getDate() + 28)
+    for (const m of members) {
+      const resource = data.engineResources.find((r) => r.id === m.resourceId)
+      if (!resource) continue
+      const capacity = calculateCapacity({ resource, org: data.orgSettings, assignments: projectedAssignments, availability: data.engineAvailability, rangeStart: today, rangeEnd: fourWeeksOut })
+      if (utilizationStatus(capacity.utilization, data.orgSettings) === 'overloaded' || utilizationStatus(capacity.utilization, data.orgSettings) === 'critical') {
+        await supabase.from('notifications').insert({
+          organization_id: profile.organization_id,
+          user_id: null,
+          notification_type: 'resource_overloaded',
+          severity: 'critical',
+          title: `${m.fullName} is overloaded`,
+          message: `Approving this allocation puts ${m.fullName} at ${Math.round(capacity.utilization * 100)}% utilization.`,
+          entity_type: 'resource',
+          entity_id: m.resourceId,
+        })
+      }
+    }
   }
 
   async function handleConfirm(reasonCode: ApprovalReasonCode | null, note: string) {
