@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:generate": "node scripts/generate-seed.mjs > supabase/seed.sql"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",
