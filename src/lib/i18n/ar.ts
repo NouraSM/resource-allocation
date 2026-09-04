@@ -187,6 +187,7 @@ const ar = {
     activity: 'النشاط',
     generateAllocation: 'إنشاء تخصيص',
     noAssignments: 'لا يوجد موارد مخصصة بعد.',
+    urgency: 'الإلحاح',
   },
   allocation: {
     title: 'مساحة التخصيص',

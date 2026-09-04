@@ -185,6 +185,7 @@ const en = {
     activity: 'Activity',
     generateAllocation: 'Generate Allocation',
     noAssignments: 'No resources allocated yet.',
+    urgency: 'Urgency',
   },
   allocation: {
     title: 'Allocation Workspace',

@@ -11,12 +11,22 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { priorityBreakdown } from '@/engine/priority'
+import type { PriorityInputs } from '@/engine/priority'
 import { deriveRequestRiskSeverities } from '@/engine/dashboardMetrics'
 import { priorityTone, riskTone, statusTone } from '@/lib/statusDisplay'
 import { formatDate, formatNumber } from '@/lib/utils'
 import { UrgencyOverrideDialog } from '@/components/requests/UrgencyOverrideDialog'
 import { supabase } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
+
+const PRIORITY_FACTOR_LABEL_KEYS: Record<keyof PriorityInputs, string> = {
+  urgencyScore: 'requestDetail.urgency',
+  strategicImportance: 'newRequest.strategicImportance',
+  executiveSponsorship: 'newRequest.executiveSponsored',
+  regulatoryImportance: 'newRequest.regulatoryDeadline',
+  publicImpact: 'newRequest.publicImpact',
+  dependencyImpact: 'newRequest.dependencies',
+}
 
 export function RequestDetail() {
   const { id } = useParams<{ id: string }>()
@@ -225,7 +235,7 @@ export function RequestDetail() {
                 {breakdown.map((b) => (
                   <li key={b.key} className="flex items-center justify-between text-xs">
                     <span className="text-slate-500">
-                      {b.label} ({Math.round(b.weight * 100)}%)
+                      {t(PRIORITY_FACTOR_LABEL_KEYS[b.key])} ({Math.round(b.weight * 100)}%)
                     </span>
                     <span className="font-medium text-slate-700">{formatNumber(b.value, locale)}</span>
                   </li>
