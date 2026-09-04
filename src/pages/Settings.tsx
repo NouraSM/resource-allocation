@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Download, Plus } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Download, Plus, Wand2 } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
@@ -23,6 +24,7 @@ export function Settings() {
   const { t } = useI18n()
   const { profile } = useAuth()
   const { data, loading, error, refetch } = useOrgData()
+  const navigate = useNavigate()
 
   const [orgName, setOrgName] = useState<string | null>(null)
   const [targetUtilization, setTargetUtilization] = useState<number | null>(null)
@@ -136,6 +138,11 @@ export function Settings() {
 
   return (
     <AppShell title={t('settings.title')}>
+      <div className="mb-3 flex justify-end">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/setup')}>
+          <Wand2 className="h-4 w-4" /> {t('setup.title')}
+        </Button>
+      </div>
       <Tabs defaultValue="organization">
         <TabsList>
           <TabsTrigger value="organization">{t('settings.organization')}</TabsTrigger>
