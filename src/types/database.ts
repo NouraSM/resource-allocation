@@ -28,7 +28,7 @@ export type AvailabilityType =
 export type DeliverableStatus = 'not_started' | 'in_progress' | 'completed' | 'delayed'
 export type NotificationSeverity = 'info' | 'warning' | 'critical'
 
-export interface Organization {
+export type Organization = {
   id: string
   name: string
   name_ar: string | null
@@ -41,7 +41,7 @@ export interface Organization {
   created_at: string
 }
 
-export interface Profile {
+export type Profile = {
   id: string
   organization_id: string
   full_name: string
@@ -52,7 +52,7 @@ export interface Profile {
   created_at: string
 }
 
-export interface Resource {
+export type Resource = {
   id: string
   organization_id: string
   employee_code: string
@@ -71,7 +71,7 @@ export interface Resource {
   created_at: string
 }
 
-export interface Skill {
+export type Skill = {
   id: string
   organization_id: string
   name: string
@@ -80,7 +80,7 @@ export interface Skill {
   active: boolean
 }
 
-export interface ResourceSkill {
+export type ResourceSkill = {
   id: string
   organization_id: string
   resource_id: string
@@ -90,7 +90,7 @@ export interface ResourceSkill {
   verified: boolean
 }
 
-export interface WorkRequest {
+export type WorkRequest = {
   id: string
   organization_id: string
   request_number: string
@@ -120,7 +120,7 @@ export interface WorkRequest {
   updated_at: string
 }
 
-export interface RequestSkill {
+export type RequestSkill = {
   id: string
   organization_id: string
   request_id: string
@@ -130,7 +130,7 @@ export interface RequestSkill {
   mandatory: boolean
 }
 
-export interface Deliverable {
+export type Deliverable = {
   id: string
   organization_id: string
   request_id: string
@@ -141,7 +141,7 @@ export interface Deliverable {
   owner_resource_id: string | null
 }
 
-export interface Assignment {
+export type Assignment = {
   id: string
   organization_id: string
   request_id: string
@@ -157,7 +157,7 @@ export interface Assignment {
   created_at: string
 }
 
-export interface ResourceAvailability {
+export type ResourceAvailability = {
   id: string
   organization_id: string
   resource_id: string
@@ -167,7 +167,7 @@ export interface ResourceAvailability {
   availability_type: AvailabilityType
 }
 
-export interface HistoricalProject {
+export type HistoricalProject = {
   id: string
   organization_id: string
   resource_id: string
@@ -179,7 +179,7 @@ export interface HistoricalProject {
   performance_score: number | null
 }
 
-export interface Risk {
+export type Risk = {
   id: string
   organization_id: string
   request_id: string
@@ -191,7 +191,7 @@ export interface Risk {
   created_at: string
 }
 
-export interface AllocationRecommendation {
+export type AllocationRecommendation = {
   id: string
   organization_id: string
   request_id: string
@@ -208,7 +208,7 @@ export interface AllocationRecommendation {
   created_at: string
 }
 
-export interface ScenarioRun {
+export type ScenarioRun = {
   id: string
   organization_id: string
   created_by: string | null
@@ -219,7 +219,7 @@ export interface ScenarioRun {
   created_at: string
 }
 
-export interface AuditLog {
+export type AuditLog = {
   id: string
   organization_id: string
   user_id: string | null
@@ -232,7 +232,7 @@ export interface AuditLog {
   created_at: string
 }
 
-export interface Notification {
+export type Notification = {
   id: string
   organization_id: string
   user_id: string | null
@@ -246,25 +246,34 @@ export interface Notification {
   created_at: string
 }
 
-export interface Database {
+// The real schema has server-side defaults (id, created_at, computed
+// scores, ...) for most columns; modeling that precisely per table isn't
+// worth the duplication at this project's size, so Insert/Update simply
+// allow any subset of a row's fields. Postgres constraints are the actual
+// source of truth for what's required.
+type TableDef<Row> = { Row: Row; Insert: Partial<Row>; Update: Partial<Row>; Relationships: [] }
+
+export type Database = {
   public: {
     Tables: {
-      organizations: { Row: Organization }
-      profiles: { Row: Profile }
-      resources: { Row: Resource }
-      skills: { Row: Skill }
-      resource_skills: { Row: ResourceSkill }
-      work_requests: { Row: WorkRequest }
-      request_skills: { Row: RequestSkill }
-      deliverables: { Row: Deliverable }
-      assignments: { Row: Assignment }
-      resource_availability: { Row: ResourceAvailability }
-      historical_projects: { Row: HistoricalProject }
-      risks: { Row: Risk }
-      allocation_recommendations: { Row: AllocationRecommendation }
-      scenario_runs: { Row: ScenarioRun }
-      audit_logs: { Row: AuditLog }
-      notifications: { Row: Notification }
+      organizations: TableDef<Organization>
+      profiles: TableDef<Profile>
+      resources: TableDef<Resource>
+      skills: TableDef<Skill>
+      resource_skills: TableDef<ResourceSkill>
+      work_requests: TableDef<WorkRequest>
+      request_skills: TableDef<RequestSkill>
+      deliverables: TableDef<Deliverable>
+      assignments: TableDef<Assignment>
+      resource_availability: TableDef<ResourceAvailability>
+      historical_projects: TableDef<HistoricalProject>
+      risks: TableDef<Risk>
+      allocation_recommendations: TableDef<AllocationRecommendation>
+      scenario_runs: TableDef<ScenarioRun>
+      audit_logs: TableDef<AuditLog>
+      notifications: TableDef<Notification>
     }
+    Views: Record<string, never>
+    Functions: Record<string, never>
   }
 }
