@@ -171,6 +171,12 @@ const resources = RESOURCE_SEED.map(([full_name, department, seniority_level, we
   job_title: TITLES_BY_SENIORITY[seniority_level],
   active: true,
 }))
+
+const unknownDepartments = resources.map((r) => r.department).filter((d) => !DEPARTMENTS.includes(d))
+if (unknownDepartments.length) {
+  throw new Error(`RESOURCE_SEED references department(s) not in DEPARTMENTS: ${[...new Set(unknownDepartments)].join(', ')}`)
+}
+
 // consultant demo login is tied to the first resource
 const consultantResource = resources[0]
 

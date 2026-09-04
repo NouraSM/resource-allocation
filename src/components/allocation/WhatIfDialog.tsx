@@ -1,11 +1,13 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { useI18n } from '@/lib/i18n'
+import { useAuth } from '@/hooks/useAuth'
 import type { TeamScenario } from '@/engine/teamBuilder'
 import type { EngineAssignment, EngineResource, OrgSettings } from '@/engine/types'
 import { applyWhatIfChanges, compareUtilization, recommendationFromComparisons } from '@/engine/scenario'
 import { utilizationTone } from '@/lib/statusDisplay'
+import { supabase } from '@/lib/supabase'
 
 export function WhatIfDialog({
   open,
@@ -27,6 +29,8 @@ export function WhatIfDialog({
   requestId: string
 }) {
   const { t } = useI18n()
+  const { profile } = useAuth()
+  const persistedFor = useRef<string | null>(null)
   const today = useMemo(() => new Date(), [])
   const rangeEnd = useMemo(() => {
     const d = new Date(today)
@@ -61,6 +65,26 @@ export function WhatIfDialog({
 
   const recommendation = useMemo(() => recommendationFromComparisons(comparisons, []), [comparisons])
   const anyOverloaded = comparisons.some((c) => c.after.utilization > 100)
+
+  // Persist the simulation as a scenario_run (never touches live assignments)
+  // so what-if exploration leaves an audit trail, once per scenario per open.
+  useEffect(() => {
+    if (!open || !profile || !scenario || comparisons.length === 0) return
+    const key = `${scenario.scenarioNumber}-${requestId}`
+    if (persistedFor.current === key) return
+    persistedFor.current = key
+    supabase
+      .from('scenario_runs')
+      .insert({
+        organization_id: profile.organization_id,
+        created_by: profile.id,
+        request_id: requestId,
+        scenario_name: `What-if: ${scenario.strategyLabel}`,
+        scenario_data: { scenarioNumber: scenario.scenarioNumber, members: scenario.members } as unknown as Record<string, unknown>,
+        scenario_result: { comparisons, recommendation } as unknown as Record<string, unknown>,
+      })
+      .then(() => undefined)
+  }, [open, profile, scenario, comparisons, recommendation, requestId])
 
   return (
     <Dialog open={open} onClose={onClose} title={t('whatif.title')} className="max-w-2xl">
