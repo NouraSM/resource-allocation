@@ -1,22 +1,32 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Pencil } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
+import { useAuth } from '@/hooks/useAuth'
 import { useOrgData } from '@/hooks/useOrgData'
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { computeResourceUtilizations, weeklyCapacitySeries } from '@/engine/dashboardMetrics'
 import { utilizationTone, priorityTone } from '@/lib/statusDisplay'
 import { formatDate } from '@/lib/utils'
+import { ResourceFormDialog } from '@/components/resources/ResourceFormDialog'
+import type { ResourceFormValues } from '@/components/resources/ResourceFormDialog'
+import { supabase } from '@/lib/supabase'
+import { logAudit } from '@/lib/audit'
 
 export function ResourceProfile() {
   const { id } = useParams<{ id: string }>()
   const { t, locale } = useI18n()
+  const { profile } = useAuth()
   const navigate = useNavigate()
   const { data, loading, error, refetch } = useOrgData()
+  const [editOpen, setEditOpen] = useState(false)
+  const isAdmin = profile?.role === 'admin'
 
   const today = useMemo(() => new Date(), [])
 
@@ -46,9 +56,36 @@ export function ResourceProfile() {
   if (!resource || !data) return <AppShell><EmptyState title="Resource not found" /></AppShell>
 
   const canTakeMore = currentUtilization ? currentUtilization.utilization < data.orgSettings.targetUtilization : true
+  const departments = Array.from(new Set(data.resources.map((r) => r.department))).sort()
+
+  async function handleSaveEdit(values: ResourceFormValues) {
+    if (!profile || !resource) return
+    const { employee_code: _unused, ...updatable } = values
+    void _unused
+    const oldValue = { full_name: resource.full_name, department: resource.department, weekly_capacity_hours: resource.weekly_capacity_hours, active: resource.active }
+    await supabase.from('resources').update(updatable).eq('id', resource.id)
+    await logAudit({
+      organizationId: profile.organization_id,
+      userId: profile.id,
+      action: 'resource_updated',
+      entityType: 'resource',
+      entityId: resource.id,
+      oldValue,
+      newValue: updatable,
+    })
+    setEditOpen(false)
+    refetch()
+  }
 
   return (
     <AppShell title={resource.full_name} subtitle={`${resource.job_title} · ${resource.department}`}>
+      {isAdmin && (
+        <div className="mb-3 flex justify-end">
+          <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-4 w-4" /> {t('common.edit')}
+          </Button>
+        </div>
+      )}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <Card>
@@ -212,6 +249,7 @@ export function ResourceProfile() {
           </Card>
         </div>
       </div>
+      <ResourceFormDialog open={editOpen} onClose={() => setEditOpen(false)} onSave={handleSaveEdit} existing={resource} departments={departments} />
     </AppShell>
   )
 }

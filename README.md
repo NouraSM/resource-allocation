@@ -329,6 +329,13 @@ linked to a Supabase instance.
 
 ## Known limitations
 
+- **i18n coverage**: all navigation, core workflow screens (Command Center, Work
+  Requests, Request Detail, New Request, Allocation Workspace, Resources, Copilot) and
+  every status/priority/risk/role label go through the `t()` dictionary
+  (`src/lib/i18n/en.ts` / `ar.ts`) and are fully RTL-aware. Some secondary
+  admin-facing surfaces (Settings' CSV import panel copy, the Setup Wizard's helper
+  prose, a couple of dialog field labels) are still English-only pending translation —
+  the dictionary structure supports adding them without any component changes.
 - **Bundle size**: the production JS bundle is ~235 KB gzipped in one chunk; fine for an
   internal tool, but a good candidate for route-based code-splitting later.
 - **Deadline-approaching notifications**: Command Center surfaces upcoming deadlines

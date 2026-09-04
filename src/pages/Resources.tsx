@@ -1,20 +1,50 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Plus } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
+import { useAuth } from '@/hooks/useAuth'
 import { useOrgData } from '@/hooks/useOrgData'
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { Input, Select } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { computeResourceUtilizations } from '@/engine/dashboardMetrics'
 import { utilizationTone } from '@/lib/statusDisplay'
 import type { UtilizationStatus } from '@/engine/capacity'
+import { ResourceFormDialog } from '@/components/resources/ResourceFormDialog'
+import type { ResourceFormValues } from '@/components/resources/ResourceFormDialog'
+import { supabase } from '@/lib/supabase'
+import { logAudit } from '@/lib/audit'
 
 export function Resources() {
   const { t } = useI18n()
+  const { profile } = useAuth()
   const navigate = useNavigate()
   const { data, loading, error, refetch } = useOrgData()
+  const [createOpen, setCreateOpen] = useState(false)
+  const isAdmin = profile?.role === 'admin'
+
+  async function handleCreate(values: ResourceFormValues) {
+    if (!profile) return
+    const { data: inserted, error: insertError } = await supabase
+      .from('resources')
+      .insert({ organization_id: profile.organization_id, ...values })
+      .select()
+      .single()
+    if (insertError || !inserted) return
+    await logAudit({
+      organizationId: profile.organization_id,
+      userId: profile.id,
+      action: 'resource_created',
+      entityType: 'resource',
+      entityId: inserted.id,
+      newValue: { full_name: inserted.full_name, department: inserted.department },
+    })
+    setCreateOpen(false)
+    refetch()
+  }
 
   const [search, setSearch] = useState('')
   const [department, setDepartment] = useState('all')
@@ -66,7 +96,14 @@ export function Resources() {
   if (!data || data.resources.length === 0) {
     return (
       <AppShell title={t('resources.title')} subtitle={t('resources.subtitle')}>
-        <EmptyState title={t('resources.empty')} body={t('resources.emptyBody')} />
+        <EmptyState
+          title={t('resources.empty')}
+          body={t('resources.emptyBody')}
+          action={isAdmin ? <Button onClick={() => setCreateOpen(true)}>{t('common.create')}</Button> : undefined}
+        />
+        {data && (
+          <ResourceFormDialog open={createOpen} onClose={() => setCreateOpen(false)} onSave={handleCreate} departments={[]} />
+        )}
       </AppShell>
     )
   }
@@ -74,6 +111,13 @@ export function Resources() {
   return (
     <AppShell title={t('resources.title')} subtitle={t('resources.subtitle')}>
       <div className="space-y-4">
+        {isAdmin && (
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" /> {t('common.create')}
+            </Button>
+          </div>
+        )}
         <Card className="flex flex-wrap gap-3 p-3">
           <Input placeholder={t('common.search')} value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
           <Select value={department} onChange={(e) => setDepartment(e.target.value)} className="w-52">
@@ -134,6 +178,7 @@ export function Resources() {
         </div>
         {filtered.length === 0 && <p className="py-10 text-center text-sm text-slate-400">{t('common.noData')}</p>}
       </div>
+      <ResourceFormDialog open={createOpen} onClose={() => setCreateOpen(false)} onSave={handleCreate} departments={departments} />
     </AppShell>
   )
 }
