@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+
+  /* Neutral / brand */
+  --color-brand-50: #f0f5fb;
+  --color-brand-100: #dbe7f5;
+  --color-brand-200: #b3cceb;
+  --color-brand-300: #85acdd;
+  --color-brand-400: #5588cb;
+  --color-brand-500: #33689e;
+  --color-brand-600: #1f4c7a;
+  --color-brand-700: #163a5e;
+  --color-brand-800: #102944;
+  --color-brand-900: #0a1c30;
+
+  --color-slate-25: #f8fafc;
+
+  /* Semantic status */
+  --color-status-healthy: #1a7f4f;
+  --color-status-healthy-bg: #e7f6ee;
+  --color-status-attention: #b5760a;
+  --color-status-attention-bg: #fdf2df;
+  --color-status-critical: #b3261e;
+  --color-status-critical-bg: #fbe9e7;
+  --color-status-neutral: #5f6b7a;
+  --color-status-neutral-bg: #eef1f4;
+  --color-status-info: #1f4c7a;
+  --color-status-info-bg: #e9f0f8;
+}
+
+html {
+  color-scheme: light;
+}
+
+html[dir="rtl"] body {
+  font-family: "IBM Plex Sans Arabic", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+}
+
+.rtl-flip {
+  transform: scaleX(-1);
+}
