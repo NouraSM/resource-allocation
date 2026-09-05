@@ -43,13 +43,13 @@ export function Login() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <div className="flex h-11 w-11 items-center justify-center rounded-md bg-brand-700 text-white">
+          <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-control)] bg-brand-700 text-white">
             <Compass className="h-5 w-5" />
           </div>
-          <h1 className="text-lg font-semibold text-slate-900">{t('auth.title')}</h1>
-          <p className="text-xs text-slate-500">{t('auth.subtitle')}</p>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">{t('auth.title')}</h1>
+          <p className="text-sm text-slate-500">{t('auth.subtitle')}</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="space-y-4 rounded-[var(--radius-card)] border border-slate-200/70 bg-white p-6">
           <div>
             <Label htmlFor="email">{t('common.email')}</Label>
             <Input
@@ -70,7 +70,7 @@ export function Login() {
             {submitting ? t('common.loading') : t('common.signIn')}
           </Button>
         </form>
-        <div className="mt-5 rounded-lg border border-dashed border-slate-200 bg-white p-4">
+        <div className="mt-5 rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-white p-4">
           <p className="mb-2 text-xs font-semibold text-slate-500">{t('auth.demoAccounts')}</p>
           <ul className="space-y-1 text-xs text-slate-500">
             {DEMO_ACCOUNTS.map((acc) => (

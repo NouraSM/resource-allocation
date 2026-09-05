@@ -15,7 +15,7 @@ export function LoadingState({ label }: { label?: string }) {
 export function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   const { t } = useI18n()
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-status-critical-bg bg-status-critical-bg/40 py-16 text-status-critical">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-[var(--radius-card)] border border-status-critical-bg bg-status-critical-bg/40 py-16 text-status-critical">
       <AlertTriangle className="h-6 w-6" />
       <p className="text-sm font-medium">{message ?? t('common.error')}</p>
       {onRetry && (
@@ -39,7 +39,7 @@ export function EmptyState({
   icon?: ReactNode
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-slate-200 bg-slate-25 py-16 text-center">
+    <div className="flex flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-slate-25 py-16 text-center">
       <div className="mb-1 text-slate-300">{icon ?? <Inbox className="h-8 w-8" />}</div>
       <p className="text-sm font-semibold text-slate-700">{title}</p>
       {body && <p className="max-w-sm text-xs text-slate-500">{body}</p>}

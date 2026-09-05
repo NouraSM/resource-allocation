@@ -3,6 +3,15 @@
 @theme {
   --font-sans: "Inter", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 
+  /* Geometry */
+  --radius-card: 0.875rem; /* 14px — cards, dialogs, major panels */
+  --radius-control: 0.5625rem; /* 9px — buttons, inputs, controls */
+
+  /* Elevation — reserved for genuinely elevated/overlay surfaces only
+     (dialogs, popovers). Flat surfaces use a hairline border instead. */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-elevated: 0 2px 8px rgba(15, 23, 42, 0.08), 0 16px 40px -16px rgba(15, 23, 42, 0.18);
+
   /* Neutral / brand */
   --color-brand-50: #f0f5fb;
   --color-brand-100: #dbe7f5;

@@ -3,7 +3,7 @@ import type { InputHTMLAttributes, TextareaHTMLAttributes, SelectHTMLAttributes,
 import { cn } from '@/lib/utils'
 
 const fieldClasses =
-  'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-100 disabled:text-slate-400'
+  'w-full rounded-[var(--radius-control)] border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-100 disabled:text-slate-400'
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => <input ref={ref} className={cn(fieldClasses, className)} {...props} />,

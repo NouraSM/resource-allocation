@@ -10,10 +10,10 @@ export function Topbar({ title, subtitle }: { title?: string; subtitle?: string 
   const navigate = useNavigate()
 
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 md:px-6">
+    <header className="flex items-center justify-between gap-4 border-b border-slate-200/70 bg-white px-4 py-4 md:px-8 md:py-5">
       <div className="min-w-0">
-        {title && <h1 className="truncate text-lg font-semibold text-slate-900">{title}</h1>}
-        {subtitle && <p className="truncate text-xs text-slate-500">{subtitle}</p>}
+        {title && <h1 className="truncate text-[22px] font-semibold tracking-tight text-slate-900">{title}</h1>}
+        {subtitle && <p className="mt-0.5 truncate text-sm text-slate-500">{subtitle}</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <Button
@@ -26,7 +26,7 @@ export function Topbar({ title, subtitle }: { title?: string; subtitle?: string 
           {locale === 'en' ? 'العربية' : 'English'}
         </Button>
         {profile && (
-          <div className="hidden items-center gap-2 rounded-md border border-slate-200 px-2 py-1.5 sm:flex">
+          <div className="hidden items-center gap-2 rounded-[var(--radius-control)] bg-slate-100/70 px-2.5 py-1.5 sm:flex">
             <User className="h-4 w-4 text-slate-400" />
             <div className="text-xs leading-tight">
               <p className="font-medium text-slate-800">{profile.full_name}</p>
