@@ -12,19 +12,33 @@
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
   --shadow-elevated: 0 2px 8px rgba(15, 23, 42, 0.08), 0 16px 40px -16px rgba(15, 23, 42, 0.18);
 
-  /* Neutral / brand */
-  --color-brand-50: #f0f5fb;
-  --color-brand-100: #dbe7f5;
-  --color-brand-200: #b3cceb;
-  --color-brand-300: #85acdd;
-  --color-brand-400: #5588cb;
-  --color-brand-500: #33689e;
-  --color-brand-600: #1f4c7a;
-  --color-brand-700: #163a5e;
-  --color-brand-800: #102944;
-  --color-brand-900: #0a1c30;
+  /* Brand — Primary Deep Green (#114C07 anchors 700, the primary
+     action/interactive-emphasis position used across buttons, active nav,
+     and focus rings). Tints are deliberately desaturated toward white so
+     large surfaces stay calm; saturation concentrates in the small-area
+     700–900 range used for text/icons/controls. */
+  --color-brand-50: #f2f7ef;
+  --color-brand-100: #e1eeda;
+  --color-brand-200: #c3dbb6;
+  --color-brand-300: #9bc58c;
+  --color-brand-400: #6fa85e;
+  --color-brand-500: #4c8a3d;
+  --color-brand-600: #2e6c22;
+  --color-brand-700: #114c07;
+  --color-brand-800: #0d3a05;
+  --color-brand-900: #092904;
+
+  /* Accent — Warm Gold/Bronze. Reserved for rare, meaningful emphasis
+     (never a per-component decoration). */
+  --color-gold-50: #fbf6ed;
+  --color-gold-100: #f3e8d2;
+  --color-gold-300: #d2ad73;
+  --color-gold-500: #a17734;
+  --color-gold-600: #8a6329;
+  --color-gold-700: #6e4e20;
 
   --color-slate-25: #f8fafc;
+  --color-surface-soft: #fcfcfc;
 
   /* Semantic status */
   --color-status-healthy: #1a7f4f;
@@ -48,7 +62,7 @@ html[dir="rtl"] body {
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-surface-soft text-slate-900 antialiased;
 }
 
 * {

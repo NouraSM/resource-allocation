@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { Plus, SlidersHorizontal } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
@@ -29,8 +29,10 @@ export function WorkRequests() {
   const [riskFilter, setRiskFilter] = useState<RiskSeverity | 'all'>('all')
   const [entityFilter, setEntityFilter] = useState('all')
   const [unallocatedOnly, setUnallocatedOnly] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   const canCreate = profile?.role === 'admin' || profile?.role === 'resource_manager'
+  const activeSecondaryFilters = (priorityFilter !== 'all' ? 1 : 0) + (riskFilter !== 'all' ? 1 : 0) + (unallocatedOnly ? 1 : 0)
 
   const severityByRequest = useMemo(
     () => (data ? deriveRequestRiskSeverities(data.requests, data.risks) : new Map<string, RiskSeverity>()),
@@ -55,38 +57,13 @@ export function WorkRequests() {
   return (
     <AppShell title={t('requests.title')} subtitle={t('requests.subtitle')}>
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Input placeholder={t('common.search')} value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
-          {canCreate && (
-            <Button onClick={() => navigate('/requests/new')}>
-              <Plus className="h-4 w-4" />
-              {t('requests.newRequest')}
-            </Button>
-          )}
-        </div>
-
-        <Card className="flex flex-wrap gap-3 p-3">
-          <Select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as PriorityLevel | 'all')} className="w-40">
-            <option value="all">{t('requests.table.priority')}: {t('common.all')}</option>
-            {(['critical', 'high', 'medium', 'low'] as const).map((p) => (
-              <option key={p} value={p}>
-                {t(`priority.${p}`)}
-              </option>
-            ))}
-          </Select>
           <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as RequestStatus | 'all')} className="w-48">
             <option value="all">{t('requests.table.status')}: {t('common.all')}</option>
             {(['draft', 'submitted', 'under_review', 'ready_for_allocation', 'allocated', 'in_progress', 'at_risk', 'completed', 'cancelled'] as const).map((s) => (
               <option key={s} value={s}>
                 {t(`status.${s}`)}
-              </option>
-            ))}
-          </Select>
-          <Select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value as RiskSeverity | 'all')} className="w-40">
-            <option value="all">{t('requests.table.risk')}: {t('common.all')}</option>
-            {(['critical', 'high', 'medium', 'low'] as const).map((r) => (
-              <option key={r} value={r}>
-                {t(`risk.${r}`)}
               </option>
             ))}
           </Select>
@@ -98,11 +75,43 @@ export function WorkRequests() {
               </option>
             ))}
           </Select>
-          <label className="flex items-center gap-2 text-sm text-slate-600">
-            <input type="checkbox" checked={unallocatedOnly} onChange={(e) => setUnallocatedOnly(e.target.checked)} />
-            {t('requests.unallocatedOnly')}
-          </label>
-        </Card>
+          <Button variant="secondary" size="sm" onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}>
+            <SlidersHorizontal className="h-4 w-4" />
+            {activeSecondaryFilters > 0 ? `${t('common.filters')} (${activeSecondaryFilters})` : t('common.filters')}
+          </Button>
+          <div className="flex-1" />
+          {canCreate && (
+            <Button onClick={() => navigate('/requests/new')}>
+              <Plus className="h-4 w-4" />
+              {t('requests.newRequest')}
+            </Button>
+          )}
+        </div>
+
+        {filtersOpen && (
+          <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-control)] bg-slate-100/50 p-3">
+            <Select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as PriorityLevel | 'all')} className="w-40">
+              <option value="all">{t('requests.table.priority')}: {t('common.all')}</option>
+              {(['critical', 'high', 'medium', 'low'] as const).map((p) => (
+                <option key={p} value={p}>
+                  {t(`priority.${p}`)}
+                </option>
+              ))}
+            </Select>
+            <Select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value as RiskSeverity | 'all')} className="w-40">
+              <option value="all">{t('requests.table.risk')}: {t('common.all')}</option>
+              {(['critical', 'high', 'medium', 'low'] as const).map((r) => (
+                <option key={r} value={r}>
+                  {t(`risk.${r}`)}
+                </option>
+              ))}
+            </Select>
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input type="checkbox" checked={unallocatedOnly} onChange={(e) => setUnallocatedOnly(e.target.checked)} />
+              {t('requests.unallocatedOnly')}
+            </label>
+          </div>
+        )}
 
         {loading && <LoadingState />}
         {error && <ErrorState message={error} onRetry={refetch} />}
@@ -155,11 +164,19 @@ export function WorkRequests() {
                         {r.estimated_effort_hours} {t('common.hours')}
                       </TD>
                       <TD className="whitespace-nowrap">
-                        <Badge tone={assignedCount === 0 ? 'attention' : 'healthy'}>
-                          {assignedCount === 0 ? t('allocationQueue.unallocated') : `${assignedCount} ${t('allocationQueue.assignedLabel')}`}
-                        </Badge>
+                        {assignedCount === 0 ? (
+                          <Badge tone="attention">{t('allocationQueue.unallocated')}</Badge>
+                        ) : (
+                          <span className="text-sm text-slate-500">{`${assignedCount} ${t('allocationQueue.assignedLabel')}`}</span>
+                        )}
                       </TD>
-                      <TD>{severity ? <Badge tone={riskTone[severity]}>{t(`risk.${severity}`)}</Badge> : <Badge tone="neutral">{t('risk.none')}</Badge>}</TD>
+                      <TD>
+                        {severity ? (
+                          <Badge tone={riskTone[severity]}>{t(`risk.${severity}`)}</Badge>
+                        ) : (
+                          <span className="text-sm text-slate-400">{t('risk.none')}</span>
+                        )}
+                      </TD>
                       <TD>
                         <Badge tone={statusTone[r.status]}>{t(`status.${r.status}`)}</Badge>
                       </TD>

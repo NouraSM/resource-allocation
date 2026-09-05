@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { AlertTriangle, CalendarClock, CheckCircle2, ClipboardList, Gauge, TrendingUp, Users } from 'lucide-react'
+import { Flag } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
 import { useOrgData } from '@/hooks/useOrgData'
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
-import { KpiCard } from '@/components/dashboard/KpiCard'
+import { HeroMetric, StatInline } from '@/components/dashboard/KpiCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -79,34 +79,40 @@ export function CommandCenter() {
 
   return (
     <AppShell title={t('commandCenter.title')} subtitle={t('commandCenter.subtitle')}>
-      <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <KpiCard label={t('commandCenter.activeRequests')} value={kpis.activeRequests} icon={ClipboardList} />
-          <KpiCard label={t('commandCenter.criticalRequests')} value={kpis.criticalRequests} icon={AlertTriangle} tone={kpis.criticalRequests > 0 ? 'critical' : 'neutral'} />
-          <KpiCard label={t('commandCenter.atRiskRequests')} value={kpis.atRiskRequests} icon={TrendingUp} tone={kpis.atRiskRequests > 0 ? 'attention' : 'neutral'} />
-          <KpiCard label={t('commandCenter.unallocatedRequests')} value={kpis.unallocatedRequests} icon={ClipboardList} tone={kpis.unallocatedRequests > 0 ? 'attention' : 'neutral'} />
-          <KpiCard label={t('commandCenter.teamUtilization')} value={formatPercent(kpis.teamUtilization * 100, locale)} icon={Gauge} />
-          <KpiCard label={t('commandCenter.overloadedResources')} value={kpis.overloadedResources} icon={Users} tone={kpis.overloadedResources > 0 ? 'critical' : 'healthy'} />
-          <KpiCard label={t('commandCenter.availableCapacity')} value={`${Math.round(kpis.availableCapacityNext2Weeks)} ${t('common.hours')}`} icon={CheckCircle2} />
-          <KpiCard label={t('commandCenter.upcomingDeadlines')} value={deadlines.length} icon={CalendarClock} />
-        </div>
+      <div className="space-y-10">
+        {/* Hero: the few numbers that answer "what needs attention now" */}
+        <section className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
+          <HeroMetric label={t('commandCenter.criticalRequests')} value={kpis.criticalRequests} tone={kpis.criticalRequests > 0 ? 'critical' : 'calm'} />
+          <HeroMetric label={t('commandCenter.atRiskRequests')} value={kpis.atRiskRequests} tone={kpis.atRiskRequests > 0 ? 'attention' : 'calm'} />
+          <HeroMetric label={t('commandCenter.unallocatedRequests')} value={kpis.unallocatedRequests} tone={kpis.unallocatedRequests > 0 ? 'attention' : 'calm'} />
+          <HeroMetric label={t('commandCenter.overloadedResources')} value={kpis.overloadedResources} tone={kpis.overloadedResources > 0 ? 'critical' : 'calm'} />
+        </section>
+
+        {/* Supporting context — deliberately quieter than the hero row above */}
+        <section className="flex flex-wrap items-baseline gap-x-8 gap-y-2 border-t border-slate-200/70 pt-6">
+          <StatInline label={t('commandCenter.activeRequests')} value={kpis.activeRequests} />
+          <StatInline label={t('commandCenter.teamUtilization')} value={formatPercent(kpis.teamUtilization * 100, locale)} emphasize />
+          <StatInline label={t('commandCenter.availableCapacity')} value={`${Math.round(kpis.availableCapacityNext2Weeks)} ${t('common.hours')}`} />
+          <StatInline label={t('commandCenter.upcomingDeadlines')} value={deadlines.length} />
+        </section>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="items-center gap-2">
+            <Flag className="h-4 w-4 shrink-0 text-gold-600" />
             <CardTitle>{t('commandCenter.executiveAttention')}</CardTitle>
           </CardHeader>
           <CardContent>
             {attentionRequests.length === 0 ? (
               <p className="text-sm text-slate-500">{t('commandCenter.executiveAttentionEmpty')}</p>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {attentionRequests.map((r) => {
                   const severity = computed.severityByRequest.get(r.id) ?? 'high'
                   return (
                     <button
                       key={r.id}
                       onClick={() => navigate(`/requests/${r.id}`)}
-                      className="rounded-md border border-status-critical-bg bg-status-critical-bg/40 p-3 text-start transition hover:border-status-critical"
+                      className="rounded-[var(--radius-control)] bg-status-critical-bg/30 p-3 text-start transition-colors hover:bg-status-critical-bg/70"
                     >
                       <div className="mb-1 flex items-center justify-between gap-2">
                         <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
@@ -129,11 +135,11 @@ export function CommandCenter() {
             </CardHeader>
             <CardContent className="p-0">
               {deadlines.length === 0 ? (
-                <p className="p-4 text-sm text-slate-500">{t('commandCenter.noDeadlines')}</p>
+                <p className="p-5 text-sm text-slate-500">{t('commandCenter.noDeadlines')}</p>
               ) : (
                 <ul className="divide-y divide-slate-100">
                   {deadlines.slice(0, 8).map((r) => (
-                    <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                    <li key={r.id} className="flex items-center justify-between gap-3 px-5 py-2.5">
                       <button onClick={() => navigate(`/requests/${r.id}`)} className="min-w-0 text-start">
                         <p className="truncate text-sm font-medium text-slate-800 hover:underline">{r.title}</p>
                         <p className="text-xs text-slate-500">{r.requesting_entity}</p>
@@ -161,11 +167,11 @@ export function CommandCenter() {
               ) : (
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={deptCapacity.map((d) => ({ ...d, avgUtilizationPct: Math.round(d.avgUtilization * 100) }))} layout="vertical" margin={{ left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                     <XAxis type="number" domain={[0, 120]} tickFormatter={(v) => `${v}%`} fontSize={11} />
                     <YAxis type="category" dataKey="department" width={140} fontSize={11} />
                     <Tooltip formatter={(v) => `${v}%`} />
-                    <Bar dataKey="avgUtilizationPct" radius={[0, 4, 4, 0]} fill="#1f4c7a" />
+                    <Bar dataKey="avgUtilizationPct" radius={[0, 4, 4, 0]} fill="#114c07" />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -178,9 +184,9 @@ export function CommandCenter() {
             <CardTitle>{t('commandCenter.priorityVsCapacity')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={200}>
               <BarChart data={backlog.map((b) => ({ ...b, label: t(`priority.${b.priority}`) }))}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="label" fontSize={12} />
                 <YAxis fontSize={11} />
                 <Tooltip formatter={(v) => `${v} ${t('common.hours')}`} />

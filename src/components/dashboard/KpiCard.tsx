@@ -1,33 +1,30 @@
-import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export function KpiCard({
-  label,
-  value,
-  icon: Icon,
-  tone = 'neutral',
-  hint,
-}: {
-  label: string
-  value: string | number
-  icon?: LucideIcon
-  tone?: 'neutral' | 'healthy' | 'attention' | 'critical'
-  hint?: string
-}) {
-  const toneClasses: Record<string, string> = {
-    neutral: 'text-slate-700',
-    healthy: 'text-status-healthy',
-    attention: 'text-status-attention',
-    critical: 'text-status-critical',
-  }
+type HeroTone = 'calm' | 'attention' | 'critical' | 'brand'
+
+const HERO_TONE_CLASSES: Record<HeroTone, string> = {
+  calm: 'text-slate-900',
+  attention: 'text-status-attention',
+  critical: 'text-status-critical',
+  brand: 'text-brand-700',
+}
+
+/** A single top-level executive number — typography carries the hierarchy, not a container. */
+export function HeroMetric({ label, value, tone = 'calm' }: { label: string; value: string | number; tone?: HeroTone }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-slate-500">{label}</p>
-        {Icon && <Icon className="h-4 w-4 text-slate-300" />}
-      </div>
-      <p className={cn('mt-1.5 text-2xl font-semibold tabular-nums', toneClasses[tone])}>{value}</p>
-      {hint && <p className="mt-0.5 text-[11px] text-slate-400">{hint}</p>}
+    <div>
+      <p className={cn('text-4xl font-semibold tabular-nums tracking-tight sm:text-[2.75rem]', HERO_TONE_CLASSES[tone])}>{value}</p>
+      <p className="mt-1 text-sm font-medium text-slate-500">{label}</p>
+    </div>
+  )
+}
+
+/** A quieter, inline secondary figure for the supporting-metrics strip. */
+export function StatInline({ label, value, emphasize = false }: { label: string; value: string | number; emphasize?: boolean }) {
+  return (
+    <div className="flex items-baseline gap-1.5">
+      <span className={cn('text-sm font-semibold tabular-nums', emphasize ? 'text-brand-700' : 'text-slate-700')}>{value}</span>
+      <span className="text-xs text-slate-400">{label}</span>
     </div>
   )
 }

@@ -5,7 +5,7 @@ import { MobileNav } from './MobileNav'
 
 export function AppShell({ title, subtitle, children }: { title?: string; subtitle?: string; children: ReactNode }) {
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-surface-soft">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar title={title} subtitle={subtitle} />
