@@ -49,7 +49,7 @@ export function AuditLog() {
                 <TH>{t('auditLog.action')}</TH>
                 <TH>{t('auditLog.entity')}</TH>
                 <TH>{t('auditLog.reason')}</TH>
-                <TH></TH>
+                <TH>{t('auditLog.changes')}</TH>
               </TR>
             </THead>
             <TBody>
@@ -67,7 +67,7 @@ export function AuditLog() {
                       <TD className="whitespace-nowrap">
                         <span className="flex items-center gap-1 text-xs text-slate-400">
                           {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                          {t('auditLog.before')}/{t('auditLog.after')}
+                          {t('auditLog.viewChanges')}
                         </span>
                       </TD>
                     </TR>

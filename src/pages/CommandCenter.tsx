@@ -83,18 +83,16 @@ export function CommandCenter() {
   const overloadThreshold = data.orgSettings.overloadThreshold
   const highlightDept = deptCapacity[0] && deptCapacity[0].avgUtilization >= overloadThreshold - 0.05 ? deptCapacity[0].department : null
 
-  // Exactly one metric anchors the page: Critical when it's non-zero, else At
-  // Risk when it's non-zero, else Critical shown calm at zero. The rest stay
-  // visible and legible, just visually secondary — not a smallness contest.
-  const allMetrics = [
-    { key: 'critical', label: t('commandCenter.criticalRequests'), value: kpis.criticalRequests, tone: kpis.criticalRequests > 0 ? ('critical' as const) : ('calm' as const) },
+  // Critical Requests always anchors the page — position is stable regardless
+  // of value, so the layout never reshuffles itself as data changes. Only its
+  // color reacts (red when >0, calm gray at 0). The other three always render
+  // in the same fixed order, visually secondary but still legible.
+  const hero = { label: t('commandCenter.criticalRequests'), value: kpis.criticalRequests, tone: kpis.criticalRequests > 0 ? ('critical' as const) : ('calm' as const) }
+  const secondaryMetrics = [
     { key: 'atRisk', label: t('commandCenter.atRiskRequests'), value: kpis.atRiskRequests, tone: kpis.atRiskRequests > 0 ? ('attention' as const) : ('calm' as const) },
     { key: 'unallocated', label: t('commandCenter.unallocatedRequests'), value: kpis.unallocatedRequests, tone: kpis.unallocatedRequests > 0 ? ('attention' as const) : ('calm' as const) },
     { key: 'overloaded', label: t('commandCenter.overloadedResources'), value: kpis.overloadedResources, tone: kpis.overloadedResources > 0 ? ('critical' as const) : ('calm' as const) },
   ]
-  const heroIndex = kpis.criticalRequests > 0 ? 0 : kpis.atRiskRequests > 0 ? 1 : 0
-  const hero = allMetrics[heroIndex]
-  const secondaryMetrics = allMetrics.filter((_, i) => i !== heroIndex)
 
   return (
     <AppShell title={t('commandCenter.title')} subtitle={t('commandCenter.subtitle')}>
@@ -220,13 +218,13 @@ export function CommandCenter() {
             <CardTitle>{t('commandCenter.priorityVsCapacity')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={145}>
               <BarChart data={backlog.map((b) => ({ ...b, label: t(`priority.${b.priority}`) }))}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="label" fontSize={12} />
                 <YAxis fontSize={11} />
                 <Tooltip formatter={(v) => `${v} ${t('common.hours')}`} />
-                <Bar dataKey="backlogHours" radius={[4, 4, 0, 0]} fill="#b5760a" />
+                <Bar dataKey="backlogHours" radius={[4, 4, 0, 0]} fill="#94a3b8" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

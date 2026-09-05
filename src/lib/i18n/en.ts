@@ -287,6 +287,7 @@ const en = {
     },
     empty: 'No Resources Added',
     emptyBody: 'Add resources to start matching them against incoming demand.',
+    createResource: 'Create Resource',
   },
   resourceProfile: {
     currentAllocation: 'Current Allocation',
@@ -309,8 +310,7 @@ const en = {
     subtitle: 'Ask questions about demand, capacity, and delivery risk',
     emptyTitle: 'What would you like to know?',
     placeholder: 'Ask a question…',
-    notConfigured: 'AI Assistant Not Configured',
-    notConfiguredBody: 'Set OPENAI_API_KEY on the server to enable natural-language answers. Core allocation features work without it.',
+    analysisMode: 'Analysis mode · Rules-based',
     suggested: 'Suggested questions',
     send: 'Send',
   },
@@ -328,6 +328,8 @@ const en = {
     before: 'Before',
     after: 'After',
     reason: 'Reason',
+    changes: 'Changes',
+    viewChanges: 'View changes',
     empty: 'No audit events yet',
   },
   settings: {

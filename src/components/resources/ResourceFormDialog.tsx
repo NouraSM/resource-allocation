@@ -72,7 +72,7 @@ export function ResourceFormDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title={existing ? t('common.edit') : t('common.create')}>
+    <Dialog open={open} onClose={onClose} title={existing ? t('common.edit') : t('resources.createResource')}>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="rf-code">Employee Code</Label>
@@ -134,7 +134,7 @@ export function ResourceFormDialog({
           {t('common.cancel')}
         </Button>
         <Button disabled={!canSave || saving} onClick={handleSave}>
-          {saving ? t('common.loading') : t('common.save')}
+          {saving ? t('common.loading') : existing ? t('common.save') : t('resources.createResource')}
         </Button>
       </div>
     </Dialog>

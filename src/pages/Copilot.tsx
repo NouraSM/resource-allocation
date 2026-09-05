@@ -33,7 +33,6 @@ export function Copilot() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
-  const [aiUnavailable, setAiUnavailable] = useState(false)
 
   async function handleSend(question: string) {
     if (!question.trim() || !data) return
@@ -47,7 +46,6 @@ export function Copilot() {
     if (aiResult.ok) {
       setMessages((m) => [...m, { role: 'assistant', text: aiResult.data.answer, actions: computed.actions, aiPhrased: true }])
     } else {
-      setAiUnavailable(true)
       setMessages((m) => [...m, { role: 'assistant', text: computed.text, actions: computed.actions, aiPhrased: false }])
     }
     setSending(false)
@@ -59,13 +57,6 @@ export function Copilot() {
   return (
     <AppShell title={t('copilot.title')} subtitle={t('copilot.subtitle')}>
       <div className="mx-auto flex h-[calc(100vh-140px)] max-w-2xl flex-col">
-        {aiUnavailable && (
-          <div className="mb-3 rounded-[var(--radius-control)] bg-slate-100/60 p-3 text-xs text-slate-600">
-            <p className="font-semibold text-slate-700">{t('copilot.notConfigured')}</p>
-            <p>{t('copilot.notConfiguredBody')}</p>
-          </div>
-        )}
-
         {messages.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 text-center">
             <div>
@@ -97,7 +88,7 @@ export function Copilot() {
                 >
                   {m.role === 'assistant' && (
                     <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold text-slate-400">
-                      <MessageSquareText className="h-3 w-3" /> {t('app.name')} {m.aiPhrased ? '' : `(${t('copilot.notConfigured')})`}
+                      <MessageSquareText className="h-3 w-3" /> {t('app.name')} {m.aiPhrased ? '' : `· ${t('copilot.analysisMode')}`}
                     </p>
                   )}
                   <p className="whitespace-pre-wrap">{m.text}</p>

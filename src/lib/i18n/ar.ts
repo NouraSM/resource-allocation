@@ -289,6 +289,7 @@ const ar = {
     },
     empty: 'لم تتم إضافة موارد',
     emptyBody: 'أضف موارد لبدء مطابقتها مع الطلبات الواردة.',
+    createResource: 'إنشاء مورد',
   },
   resourceProfile: {
     currentAllocation: 'التخصيص الحالي',
@@ -311,8 +312,7 @@ const ar = {
     subtitle: 'اطرح أسئلة حول الطلب والطاقة الاستيعابية ومخاطر التسليم',
     emptyTitle: 'ما الذي تريد معرفته؟',
     placeholder: 'اطرح سؤالاً…',
-    notConfigured: 'المساعد الذكي غير مُفعّل',
-    notConfiguredBody: 'قم بتفعيل مفتاح OPENAI_API_KEY على الخادم لتفعيل الإجابات بلغة طبيعية. تعمل ميزات التخصيص الأساسية بدونه.',
+    analysisMode: 'وضع التحليل · قائم على القواعد',
     suggested: 'أسئلة مقترحة',
     send: 'إرسال',
   },
@@ -330,6 +330,8 @@ const ar = {
     before: 'قبل',
     after: 'بعد',
     reason: 'السبب',
+    changes: 'التغييرات',
+    viewChanges: 'عرض التغييرات',
     empty: 'لا توجد أحداث تدقيق بعد',
   },
   settings: {

@@ -200,21 +200,24 @@ export function Portfolio() {
           </TabsContent>
 
           <TabsContent value="kanban" className="mt-3">
-            <div className="grid grid-cols-1 gap-3 overflow-x-auto sm:grid-cols-2 lg:grid-cols-6">
+            <div className="flex gap-4 overflow-x-auto pb-2">
               {BUCKET_ORDER.map((bucket) => (
-                <div key={bucket} className="min-w-[220px] rounded-lg bg-slate-100/60 p-2">
-                  <p className="mb-2 px-1 text-xs font-semibold text-slate-500">
+                <div key={bucket} className="w-[300px] shrink-0 rounded-[var(--radius-card)] bg-slate-100/50 p-3">
+                  <p className="mb-3 px-0.5 text-xs font-semibold text-slate-500">
                     {BUCKET_LABELS[bucket]} ({grouped[bucket].length})
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {grouped[bucket].map((r) => {
                       const action = nextAction(r.status)
                       return (
-                        <Card key={r.id} className="p-2.5">
-                          <button onClick={() => navigate(`/requests/${r.id}`)} className="mb-1.5 block text-start text-xs font-medium text-slate-800 hover:underline">
+                        <Card key={r.id} className="p-3">
+                          <button
+                            onClick={() => navigate(`/requests/${r.id}`)}
+                            className="mb-2 block text-start text-sm font-medium leading-snug text-slate-800 hover:underline"
+                          >
                             {r.title}
                           </button>
-                          <div className="mb-1.5 flex items-center gap-1.5">
+                          <div className="mb-2 flex items-center gap-1.5">
                             {PROMINENT_PRIORITIES.includes(r.priority_level) ? (
                               <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
                             ) : (
@@ -222,14 +225,14 @@ export function Portfolio() {
                             )}
                             {severityByRequest.get(r.id) && <Badge tone={riskTone[severityByRequest.get(r.id)!]}>{t(`risk.${severityByRequest.get(r.id)!}`)}</Badge>}
                           </div>
-                          <p className="mb-1.5 text-[10px] text-slate-400">{formatDate(r.requested_deadline, locale)}</p>
+                          <p className="mb-2 text-[11px] text-slate-400">{formatDate(r.requested_deadline, locale)}</p>
                           {canManage && bucket === 'ready_for_allocation' && (
-                            <Button size="sm" variant="outline" className="w-full" onClick={() => navigate(`/allocation/${r.id}`)}>
+                            <Button size="sm" className="w-full" onClick={() => navigate(`/allocation/${r.id}`)}>
                               {t('requestDetail.generateAllocation')} <ArrowRight className="h-3 w-3 rtl:-scale-x-100" />
                             </Button>
                           )}
                           {canManage && action && bucket !== 'ready_for_allocation' && (
-                            <Button size="sm" variant="secondary" className="w-full" onClick={() => handleAdvance(r, action.nextStatus)}>
+                            <Button size="sm" variant="ghost" className="w-full" onClick={() => handleAdvance(r, action.nextStatus)}>
                               {action.label}
                             </Button>
                           )}
