@@ -15,6 +15,7 @@ import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { BUCKET_ORDER, deriveRequestRiskSeverities, portfolioBucket } from '@/engine/dashboardMetrics'
 import type { PortfolioBucket } from '@/engine/dashboardMetrics'
 import { priorityTone, riskTone } from '@/lib/statusDisplay'
+import { entityShortLabel } from '@/lib/entityDisplay'
 import { formatDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
@@ -140,10 +141,16 @@ export function Portfolio() {
                   {filtered.map((r) => (
                     <TR key={r.id} className="cursor-pointer" onClick={() => navigate(`/requests/${r.id}`)}>
                       <TD className="font-medium text-slate-800">{r.title}</TD>
-                      <TD>{r.requesting_entity}</TD>
+                      <TD className="whitespace-nowrap" title={r.requesting_entity}>{entityShortLabel(r.requesting_entity)}</TD>
                       <TD><Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge></TD>
                       <TD>{formatDate(r.requested_deadline, locale)}</TD>
-                      <TD>{severityByRequest.get(r.id) ? <Badge tone={riskTone[severityByRequest.get(r.id)!]}>{t(`risk.${severityByRequest.get(r.id)!}`)}</Badge> : '—'}</TD>
+                      <TD>
+                        {severityByRequest.get(r.id) ? (
+                          <Badge tone={riskTone[severityByRequest.get(r.id)!]}>{t(`risk.${severityByRequest.get(r.id)!}`)}</Badge>
+                        ) : (
+                          <span className="text-sm text-slate-400">{t('risk.none')}</span>
+                        )}
+                      </TD>
                       <TD>{BUCKET_LABELS[portfolioBucket(r.status) ?? 'new']}</TD>
                     </TR>
                   ))}

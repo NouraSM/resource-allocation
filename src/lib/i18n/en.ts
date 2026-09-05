@@ -219,6 +219,8 @@ const en = {
     tradeoffs: 'Tradeoffs',
     notFeasible: 'Not Feasible',
     backToQueue: 'Back to Allocation Queue',
+    showRationale: 'Show rationale',
+    hideRationale: 'Hide rationale',
   },
   allocationQueue: {
     title: 'Allocation Queue',
@@ -305,6 +307,7 @@ const en = {
   copilot: {
     title: 'Copilot',
     subtitle: 'Ask questions about demand, capacity, and delivery risk',
+    emptyTitle: 'What would you like to know?',
     placeholder: 'Ask a question…',
     notConfigured: 'AI Assistant Not Configured',
     notConfiguredBody: 'Set OPENAI_API_KEY on the server to enable natural-language answers. Core allocation features work without it.',

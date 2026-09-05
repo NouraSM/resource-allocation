@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Clock, Scale, Star, Target, User } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -32,11 +33,12 @@ export function ScenarioCard({
   canManage: boolean
 }) {
   const { t } = useI18n()
+  const [showRationale, setShowRationale] = useState(false)
   const scenarioLabelKey = { 1: 'allocation.scenarioA', 2: 'allocation.scenarioB', 3: 'allocation.scenarioC' } as const
   const isRecommended = badges.includes('recommended')
 
   return (
-    <Card className={cn('flex flex-col', isRecommended && 'border-brand-400 ring-1 ring-brand-200')}>
+    <Card className={cn('flex flex-col', isRecommended && 'border-gold-300 ring-1 ring-gold-100')}>
       <CardHeader className="flex-col items-start gap-2">
         <div className="flex w-full items-center justify-between">
           <CardTitle>{t(scenarioLabelKey[scenario.scenarioNumber])}</CardTitle>
@@ -47,7 +49,7 @@ export function ScenarioCard({
             {badges.map((key) => {
               const { icon: Icon, labelKey } = BADGE_META[key]
               return (
-                <Badge key={key} tone={key === 'recommended' ? 'healthy' : 'info'}>
+                <Badge key={key} tone={key === 'recommended' ? 'gold' : 'info'}>
                   <Icon className="h-3 w-3" /> {t(labelKey)}
                 </Badge>
               )
@@ -88,24 +90,39 @@ export function ScenarioCard({
           ))}
         </div>
 
-        {scenario.reasons.length > 0 && (
+        {(scenario.reasons.length > 0 || scenario.tradeoffs.length > 0) && (
           <div>
-            <p className="mb-1 text-[11px] font-semibold text-slate-400">{t('allocation.reasons')}</p>
-            <ul className="list-inside list-disc space-y-0.5 text-[11px] text-slate-600">
-              {scenario.reasons.map((r) => (
-                <li key={r}>{r}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {scenario.tradeoffs.length > 0 && (
-          <div>
-            <p className="mb-1 text-[11px] font-semibold text-status-attention">{t('allocation.tradeoffs')}</p>
-            <ul className="list-inside list-disc space-y-0.5 text-[11px] text-slate-600">
-              {scenario.tradeoffs.map((r) => (
-                <li key={r}>{r}</li>
-              ))}
-            </ul>
+            <button
+              type="button"
+              onClick={() => setShowRationale((s) => !s)}
+              className="text-[11px] font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+            >
+              {showRationale ? t('allocation.hideRationale') : t('allocation.showRationale')}
+            </button>
+            {showRationale && (
+              <div className="mt-2 space-y-2">
+                {scenario.reasons.length > 0 && (
+                  <div>
+                    <p className="mb-1 text-[11px] font-semibold text-slate-400">{t('allocation.reasons')}</p>
+                    <ul className="list-inside list-disc space-y-0.5 text-[11px] text-slate-600">
+                      {scenario.reasons.map((r) => (
+                        <li key={r}>{r}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {scenario.tradeoffs.length > 0 && (
+                  <div>
+                    <p className="mb-1 text-[11px] font-semibold text-status-attention">{t('allocation.tradeoffs')}</p>
+                    <ul className="list-inside list-disc space-y-0.5 text-[11px] text-slate-600">
+                      {scenario.tradeoffs.map((r) => (
+                        <li key={r}>{r}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

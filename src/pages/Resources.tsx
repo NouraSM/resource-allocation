@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { computeResourceUtilizations } from '@/engine/dashboardMetrics'
-import { utilizationTone } from '@/lib/statusDisplay'
+import { utilizationTone, utilizationBarClass } from '@/lib/statusDisplay'
+import { ProgressBar } from '@/components/ui/progress'
 import type { UtilizationStatus } from '@/engine/capacity'
 import { ResourceFormDialog } from '@/components/resources/ResourceFormDialog'
 import type { ResourceFormValues } from '@/components/resources/ResourceFormDialog'
@@ -151,23 +152,25 @@ export function Resources() {
             <button
               key={row.resource.id}
               onClick={() => navigate(`/resources/${row.resource.id}`)}
-              className="rounded-lg border border-slate-200 bg-white p-4 text-start transition hover:border-brand-300 hover:shadow-sm"
+              className="rounded-[var(--radius-card)] border border-slate-200/70 bg-white p-4 text-start transition-colors hover:bg-slate-50/60"
             >
-              <div className="mb-1 flex items-start justify-between gap-2">
+              <div className="mb-2 flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">{row.resource.full_name}</p>
-                  <p className="text-xs text-slate-500">{row.resource.job_title}</p>
+                  <p className="text-[15px] font-semibold text-slate-800">{row.resource.full_name}</p>
+                  <p className="text-xs text-slate-500">
+                    {row.resource.job_title} · {row.resource.department}
+                  </p>
                 </div>
                 <Badge tone={utilizationTone[row.status]}>{t(`utilization.${row.status}`)}</Badge>
               </div>
-              <p className="mb-2 text-xs text-slate-400">{row.resource.department}</p>
+              <ProgressBar value={row.utilization * 100} className="mb-2 h-1" barClassName={utilizationBarClass[row.status]} />
               <div className="mb-2 flex flex-wrap gap-1">
-                {row.skills.slice(0, 4).map((s) => (
+                {row.skills.slice(0, 3).map((s) => (
                   <span key={s} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
                     {s}
                   </span>
                 ))}
-                {row.skills.length > 4 && <span className="text-[10px] text-slate-400">+{row.skills.length - 4}</span>}
+                {row.skills.length > 3 && <span className="text-[10px] text-slate-400">+{row.skills.length - 3}</span>}
               </div>
               <div className="flex items-center justify-between text-xs text-slate-500">
                 <span>{Math.round(row.utilization * 100)}% {t('resources.table.utilization').toLowerCase()}</span>

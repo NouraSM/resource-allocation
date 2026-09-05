@@ -27,6 +27,15 @@ export const utilizationTone: Record<UtilizationStatus, Tone> = {
   critical: 'critical',
 }
 
+/** Semantic bar-fill colors for utilization visuals — independent of the brand color. */
+export const utilizationBarClass: Record<UtilizationStatus, string> = {
+  underutilized: 'bg-slate-300',
+  healthy: 'bg-status-healthy',
+  high: 'bg-status-attention',
+  overloaded: 'bg-status-critical',
+  critical: 'bg-status-critical',
+}
+
 export const statusTone: Record<RequestStatus, Tone> = {
   draft: 'neutral',
   submitted: 'info',

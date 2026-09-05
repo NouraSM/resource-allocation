@@ -221,6 +221,8 @@ const ar = {
     tradeoffs: 'المفاضلات',
     notFeasible: 'غير قابل للتنفيذ',
     backToQueue: 'العودة إلى قائمة انتظار التخصيص',
+    showRationale: 'إظهار المبررات',
+    hideRationale: 'إخفاء المبررات',
   },
   allocationQueue: {
     title: 'قائمة انتظار التخصيص',
@@ -307,6 +309,7 @@ const ar = {
   copilot: {
     title: 'المساعد الذكي',
     subtitle: 'اطرح أسئلة حول الطلب والطاقة الاستيعابية ومخاطر التسليم',
+    emptyTitle: 'ما الذي تريد معرفته؟',
     placeholder: 'اطرح سؤالاً…',
     notConfigured: 'المساعد الذكي غير مُفعّل',
     notConfiguredBody: 'قم بتفعيل مفتاح OPENAI_API_KEY على الخادم لتفعيل الإجابات بلغة طبيعية. تعمل ميزات التخصيص الأساسية بدونه.',

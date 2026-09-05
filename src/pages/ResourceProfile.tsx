@@ -99,7 +99,7 @@ export function ResourceProfile() {
                   <XAxis dataKey="weekStart" tickFormatter={(v) => formatDate(v, locale)} fontSize={11} />
                   <YAxis fontSize={11} />
                   <Tooltip labelFormatter={(v) => formatDate(v as string, locale)} formatter={(v) => `${v} ${t('common.hours')}`} />
-                  <Bar dataKey="availableCapacityHours" radius={[4, 4, 0, 0]} fill="#1a7f4f" />
+                  <Bar dataKey="availableCapacityHours" radius={[4, 4, 0, 0]} fill="#64748b" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -116,7 +116,7 @@ export function ResourceProfile() {
                   <XAxis dataKey="weekStart" tickFormatter={(v) => formatDate(v, locale)} fontSize={11} />
                   <YAxis fontSize={11} tickFormatter={(v) => `${v}%`} />
                   <Tooltip labelFormatter={(v) => formatDate(v as string, locale)} formatter={(v) => `${v}%`} />
-                  <Line type="monotone" dataKey="utilization" stroke="#1f4c7a" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="utilization" stroke="#64748b" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -172,7 +172,7 @@ export function ResourceProfile() {
               ) : (
                 <ul className="space-y-2">
                   {history.map((h) => (
-                    <li key={h.id} className="rounded border border-slate-100 p-2 text-xs">
+                    <li key={h.id} className="rounded-[var(--radius-control)] border border-slate-100 p-2 text-xs">
                       <p className="font-medium text-slate-700">{h.project_name}</p>
                       <p className="text-slate-500">
                         {h.sector} · {h.project_type} {h.performance_score != null && `· ${h.performance_score}/100`}

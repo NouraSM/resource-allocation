@@ -11,6 +11,8 @@ export const badgeVariants = cva('inline-flex items-center gap-1 rounded-full px
       healthy: 'bg-status-healthy-bg text-status-healthy',
       attention: 'bg-status-attention-bg text-status-attention',
       critical: 'bg-status-critical-bg text-status-critical',
+      /* Reserved for rare, meaningful emphasis (e.g. a single "Recommended" pick) — not a general-purpose tone. */
+      gold: 'bg-gold-100 text-gold-700',
     },
   },
   defaultVariants: { tone: 'neutral' },

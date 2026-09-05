@@ -65,7 +65,7 @@ export function Notifications() {
           return (
             <Card
               key={n.id}
-              className={cn('cursor-pointer p-3', !n.read && 'border-brand-200 bg-brand-50/40')}
+              className={cn('cursor-pointer p-3', !n.read && 'bg-slate-50')}
               onClick={() => goToEntity(n)}
             >
               <div className="flex items-start gap-3">

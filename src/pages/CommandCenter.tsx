@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { Flag } from 'lucide-react'
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { CheckCircle2, Flag } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
 import { useOrgData } from '@/hooks/useOrgData'
@@ -77,6 +77,12 @@ export function CommandCenter() {
 
   const { kpis, attentionRequests, deadlines, deptCapacity, backlog } = computed
 
+  // deptCapacity is sorted by avgUtilization descending, so [0] is already the
+  // department under the most pressure — highlight it only if it's actually
+  // near or over the org's overload threshold; otherwise every bar stays neutral.
+  const overloadThreshold = data.orgSettings.overloadThreshold
+  const highlightDept = deptCapacity[0] && deptCapacity[0].avgUtilization >= overloadThreshold - 0.05 ? deptCapacity[0].department : null
+
   return (
     <AppShell title={t('commandCenter.title')} subtitle={t('commandCenter.subtitle')}>
       <div className="space-y-10">
@@ -96,15 +102,18 @@ export function CommandCenter() {
           <StatInline label={t('commandCenter.upcomingDeadlines')} value={deadlines.length} />
         </section>
 
-        <Card>
-          <CardHeader className="items-center gap-2">
-            <Flag className="h-4 w-4 shrink-0 text-gold-600" />
-            <CardTitle>{t('commandCenter.executiveAttention')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {attentionRequests.length === 0 ? (
-              <p className="text-sm text-slate-500">{t('commandCenter.executiveAttentionEmpty')}</p>
-            ) : (
+        {attentionRequests.length === 0 ? (
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-slate-300" />
+            {t('commandCenter.executiveAttentionEmpty')}
+          </div>
+        ) : (
+          <Card>
+            <CardHeader className="items-center gap-2">
+              <Flag className="h-4 w-4 shrink-0 text-gold-600" />
+              <CardTitle>{t('commandCenter.executiveAttention')}</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {attentionRequests.map((r) => {
                   const severity = computed.severityByRequest.get(r.id) ?? 'high'
@@ -124,9 +133,9 @@ export function CommandCenter() {
                   )
                 })}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
@@ -171,7 +180,11 @@ export function CommandCenter() {
                     <XAxis type="number" domain={[0, 120]} tickFormatter={(v) => `${v}%`} fontSize={11} />
                     <YAxis type="category" dataKey="department" width={140} fontSize={11} />
                     <Tooltip formatter={(v) => `${v}%`} />
-                    <Bar dataKey="avgUtilizationPct" radius={[0, 4, 4, 0]} fill="#114c07" />
+                    <Bar dataKey="avgUtilizationPct" radius={[0, 4, 4, 0]}>
+                      {deptCapacity.map((d) => (
+                        <Cell key={d.department} fill={d.department === highlightDept ? '#114c07' : '#94a3b8'} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               )}

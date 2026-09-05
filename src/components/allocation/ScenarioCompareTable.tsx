@@ -57,7 +57,7 @@ export function ScenarioCompareTable({
                     {(badgesByScenario[s.scenarioNumber] ?? []).map((key) => {
                       const { icon: Icon, labelKey } = BADGE_META[key]
                       return (
-                        <Badge key={key} tone={key === 'recommended' ? 'healthy' : 'info'} className="font-normal normal-case">
+                        <Badge key={key} tone={key === 'recommended' ? 'gold' : 'info'} className="font-normal normal-case">
                           <Icon className="h-3 w-3" /> {t(labelKey)}
                         </Badge>
                       )
