@@ -11,8 +11,14 @@ import { useI18n } from '@/lib/i18n'
 import type { OrgData } from '@/hooks/useOrgData'
 import { isUnallocated } from '@/engine/dashboardMetrics'
 import { isReviewStatus } from '@/lib/allocationDisplay'
-import { priorityTone, statusTone } from '@/lib/statusDisplay'
+import { priorityTone, statusTone, PROMINENT_PRIORITIES } from '@/lib/statusDisplay'
 import { formatDate } from '@/lib/utils'
+import type { RequestStatus } from '@/types/database'
+
+// Allocation Workspace is an action queue — Ready for Allocation is prominent
+// here because it directly implies the next step (unlike a passive overview
+// such as Work Requests, where the same status can render quietly).
+const PROMINENT_STATUSES: readonly RequestStatus[] = ['at_risk', 'ready_for_allocation']
 
 export function EligibleRequestsPanel({ data, onSelect }: { data: OrgData; onSelect: (id: string) => void }) {
   const { t, locale } = useI18n()
@@ -84,7 +90,7 @@ export function EligibleRequestsPanel({ data, onSelect }: { data: OrgData; onSel
             return (
               <Fragment key={r.id}>
                 <TR className="cursor-pointer" onClick={() => setExpandedId(expanded ? null : r.id)}>
-                  <TD className="max-w-[240px]">
+                  <TD className="min-w-[240px]">
                     <div className="flex items-center gap-1.5">
                       {expanded ? (
                         <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
@@ -96,18 +102,26 @@ export function EligibleRequestsPanel({ data, onSelect }: { data: OrgData; onSel
                           e.stopPropagation()
                           onSelect(r.id)
                         }}
-                        className="truncate font-medium text-slate-800 hover:text-brand-700 hover:underline"
+                        className="font-medium text-slate-800 hover:text-brand-700 hover:underline"
                       >
                         {r.title}
                       </button>
                     </div>
                   </TD>
                   <TD>
-                    <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
+                    {PROMINENT_PRIORITIES.includes(r.priority_level) ? (
+                      <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
+                    ) : (
+                      <span className="text-sm text-slate-500">{t(`priority.${r.priority_level}`)}</span>
+                    )}
                   </TD>
                   <TD className="whitespace-nowrap">{formatDate(r.requested_deadline, locale)}</TD>
                   <TD>
-                    <Badge tone={statusTone[r.status]}>{t(`status.${r.status}`)}</Badge>
+                    {PROMINENT_STATUSES.includes(r.status) ? (
+                      <Badge tone={statusTone[r.status]}>{t(`status.${r.status}`)}</Badge>
+                    ) : (
+                      <span className="text-sm text-slate-500">{t(`status.${r.status}`)}</span>
+                    )}
                   </TD>
                   <TD className="whitespace-nowrap">
                     {unallocated ? (
@@ -117,17 +131,29 @@ export function EligibleRequestsPanel({ data, onSelect }: { data: OrgData; onSel
                     )}
                   </TD>
                   <TD className="whitespace-nowrap">
-                    <Button
-                      size="sm"
-                      variant={review ? 'secondary' : 'primary'}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onSelect(r.id)
-                      }}
-                    >
-                      {review ? t('allocationQueue.reviewCta') : t('allocationQueue.generateCta')}
-                      <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
-                    </Button>
+                    {review ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onSelect(r.id)
+                        }}
+                        className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+                      >
+                        {t('allocationQueue.reviewCta')}
+                        <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
+                      </button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onSelect(r.id)
+                        }}
+                      >
+                        {t('allocationQueue.generateCta')}
+                        <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
+                      </Button>
+                    )}
                   </TD>
                 </TR>
                 {expanded && (

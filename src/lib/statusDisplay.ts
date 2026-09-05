@@ -36,6 +36,22 @@ export const utilizationBarClass: Record<UtilizationStatus, string> = {
   critical: 'bg-status-critical',
 }
 
+/** Text color for a bare (non-badge) utilization number. */
+export const utilizationTextClass: Record<UtilizationStatus, string> = {
+  underutilized: 'text-slate-400',
+  healthy: 'text-slate-700',
+  high: 'text-status-attention',
+  overloaded: 'text-status-critical',
+  critical: 'text-status-critical',
+}
+
+/**
+ * Priority levels urgent enough to warrant a pill everywhere they appear —
+ * this one is context-independent (unlike status prominence, which pages
+ * decide for themselves based on whether the status implies an action there).
+ */
+export const PROMINENT_PRIORITIES: readonly PriorityLevel[] = ['critical', 'high']
+
 export const statusTone: Record<RequestStatus, Tone> = {
   draft: 'neutral',
   submitted: 'info',

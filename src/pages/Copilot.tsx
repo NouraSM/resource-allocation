@@ -78,7 +78,7 @@ export function Copilot() {
                 <button
                   key={q}
                   onClick={() => handleSend(q)}
-                  className="rounded-full bg-slate-100/70 px-4 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-200/60 hover:text-slate-800"
+                  className="rounded-[var(--radius-control)] border border-slate-200/70 px-3.5 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-800"
                 >
                   {q}
                 </button>
@@ -125,7 +125,7 @@ export function Copilot() {
             e.preventDefault()
             handleSend(input)
           }}
-          className="mt-4 flex items-center gap-2 rounded-full border border-slate-200/70 bg-white p-1.5"
+          className="mt-6 flex items-center gap-2 rounded-full border border-slate-200/70 bg-white p-2"
         >
           <Input
             value={input}

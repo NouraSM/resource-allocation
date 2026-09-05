@@ -19,7 +19,7 @@ import {
   upcomingDeadlines,
 } from '@/engine/dashboardMetrics'
 import { formatDate, formatPercent } from '@/lib/utils'
-import { priorityTone, riskTone } from '@/lib/statusDisplay'
+import { priorityTone, riskTone, PROMINENT_PRIORITIES } from '@/lib/statusDisplay'
 
 export function CommandCenter() {
   const { t, locale } = useI18n()
@@ -83,15 +83,30 @@ export function CommandCenter() {
   const overloadThreshold = data.orgSettings.overloadThreshold
   const highlightDept = deptCapacity[0] && deptCapacity[0].avgUtilization >= overloadThreshold - 0.05 ? deptCapacity[0].department : null
 
+  // Exactly one metric anchors the page: Critical when it's non-zero, else At
+  // Risk when it's non-zero, else Critical shown calm at zero. The rest stay
+  // visible and legible, just visually secondary — not a smallness contest.
+  const allMetrics = [
+    { key: 'critical', label: t('commandCenter.criticalRequests'), value: kpis.criticalRequests, tone: kpis.criticalRequests > 0 ? ('critical' as const) : ('calm' as const) },
+    { key: 'atRisk', label: t('commandCenter.atRiskRequests'), value: kpis.atRiskRequests, tone: kpis.atRiskRequests > 0 ? ('attention' as const) : ('calm' as const) },
+    { key: 'unallocated', label: t('commandCenter.unallocatedRequests'), value: kpis.unallocatedRequests, tone: kpis.unallocatedRequests > 0 ? ('attention' as const) : ('calm' as const) },
+    { key: 'overloaded', label: t('commandCenter.overloadedResources'), value: kpis.overloadedResources, tone: kpis.overloadedResources > 0 ? ('critical' as const) : ('calm' as const) },
+  ]
+  const heroIndex = kpis.criticalRequests > 0 ? 0 : kpis.atRiskRequests > 0 ? 1 : 0
+  const hero = allMetrics[heroIndex]
+  const secondaryMetrics = allMetrics.filter((_, i) => i !== heroIndex)
+
   return (
     <AppShell title={t('commandCenter.title')} subtitle={t('commandCenter.subtitle')}>
       <div className="space-y-10">
-        {/* Hero: the few numbers that answer "what needs attention now" */}
-        <section className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
-          <HeroMetric label={t('commandCenter.criticalRequests')} value={kpis.criticalRequests} tone={kpis.criticalRequests > 0 ? 'critical' : 'calm'} />
-          <HeroMetric label={t('commandCenter.atRiskRequests')} value={kpis.atRiskRequests} tone={kpis.atRiskRequests > 0 ? 'attention' : 'calm'} />
-          <HeroMetric label={t('commandCenter.unallocatedRequests')} value={kpis.unallocatedRequests} tone={kpis.unallocatedRequests > 0 ? 'attention' : 'calm'} />
-          <HeroMetric label={t('commandCenter.overloadedResources')} value={kpis.overloadedResources} tone={kpis.overloadedResources > 0 ? 'critical' : 'calm'} />
+        {/* Hero: the one number that answers "what needs attention now" */}
+        <section className="flex flex-wrap items-end gap-x-14 gap-y-6">
+          <HeroMetric label={hero.label} value={hero.value} tone={hero.tone} size="lg" />
+          <div className="flex flex-wrap gap-x-10 gap-y-4">
+            {secondaryMetrics.map((m) => (
+              <HeroMetric key={m.key} label={m.label} value={m.value} tone={m.tone} size="sm" />
+            ))}
+          </div>
         </section>
 
         {/* Supporting context — deliberately quieter than the hero row above */}
@@ -124,7 +139,11 @@ export function CommandCenter() {
                       className="rounded-[var(--radius-control)] bg-status-critical-bg/30 p-3 text-start transition-colors hover:bg-status-critical-bg/70"
                     >
                       <div className="mb-1 flex items-center justify-between gap-2">
-                        <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
+                        {PROMINENT_PRIORITIES.includes(r.priority_level) ? (
+                          <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
+                        ) : (
+                          <span className="text-xs text-slate-500">{t(`priority.${r.priority_level}`)}</span>
+                        )}
                         <Badge tone={riskTone[severity]}>{t(`risk.${severity}`)}</Badge>
                       </div>
                       <p className="text-sm font-medium text-slate-800">{r.title}</p>
@@ -155,9 +174,13 @@ export function CommandCenter() {
                       </button>
                       <div className="shrink-0 text-end">
                         <p className="text-xs font-medium text-slate-700">{formatDate(r.requested_deadline, locale)}</p>
-                        <Badge tone={priorityTone[r.priority_level]} className="mt-0.5">
-                          {t(`priority.${r.priority_level}`)}
-                        </Badge>
+                        {PROMINENT_PRIORITIES.includes(r.priority_level) ? (
+                          <Badge tone={priorityTone[r.priority_level]} className="mt-0.5">
+                            {t(`priority.${r.priority_level}`)}
+                          </Badge>
+                        ) : (
+                          <p className="mt-0.5 text-xs text-slate-400">{t(`priority.${r.priority_level}`)}</p>
+                        )}
                       </div>
                     </li>
                   ))}

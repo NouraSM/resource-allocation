@@ -9,10 +9,10 @@ import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { Input, Select } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { computeResourceUtilizations } from '@/engine/dashboardMetrics'
-import { utilizationTone, utilizationBarClass } from '@/lib/statusDisplay'
+import { utilizationTone, utilizationBarClass, utilizationTextClass } from '@/lib/statusDisplay'
 import { ProgressBar } from '@/components/ui/progress'
+import { cn } from '@/lib/utils'
 import type { UtilizationStatus } from '@/engine/capacity'
 import { ResourceFormDialog } from '@/components/resources/ResourceFormDialog'
 import type { ResourceFormValues } from '@/components/resources/ResourceFormDialog'
@@ -112,14 +112,7 @@ export function Resources() {
   return (
     <AppShell title={t('resources.title')} subtitle={t('resources.subtitle')}>
       <div className="space-y-4">
-        {isAdmin && (
-          <div className="flex justify-end">
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4" /> {t('common.create')}
-            </Button>
-          </div>
-        )}
-        <Card className="flex flex-wrap gap-3 p-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Input placeholder={t('common.search')} value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
           <Select value={department} onChange={(e) => setDepartment(e.target.value)} className="w-52">
             <option value="all">{t('resources.table.department')}: {t('common.all')}</option>
@@ -145,7 +138,13 @@ export function Resources() {
               </option>
             ))}
           </Select>
-        </Card>
+          <div className="flex-1" />
+          {isAdmin && (
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" /> {t('common.create')}
+            </Button>
+          )}
+        </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((row) => (
@@ -154,28 +153,32 @@ export function Resources() {
               onClick={() => navigate(`/resources/${row.resource.id}`)}
               className="rounded-[var(--radius-card)] border border-slate-200/70 bg-white p-4 text-start transition-colors hover:bg-slate-50/60"
             >
-              <div className="mb-2 flex items-start justify-between gap-2">
+              <div className="mb-1 flex items-start justify-between gap-2">
                 <div>
                   <p className="text-[15px] font-semibold text-slate-800">{row.resource.full_name}</p>
                   <p className="text-xs text-slate-500">
                     {row.resource.job_title} · {row.resource.department}
                   </p>
                 </div>
-                <Badge tone={utilizationTone[row.status]}>{t(`utilization.${row.status}`)}</Badge>
+                <p className={cn('text-lg font-semibold tabular-nums', utilizationTextClass[row.status])}>
+                  {Math.round(row.utilization * 100)}%
+                </p>
               </div>
-              <ProgressBar value={row.utilization * 100} className="mb-2 h-1" barClassName={utilizationBarClass[row.status]} />
+              {row.status !== 'healthy' && (
+                <Badge tone={utilizationTone[row.status]} className="mb-2">
+                  {t(`utilization.${row.status}`)}
+                </Badge>
+              )}
+              <ProgressBar value={row.utilization * 100} className="mb-2 mt-1 h-1" barClassName={utilizationBarClass[row.status]} />
               <div className="mb-2 flex flex-wrap gap-1">
-                {row.skills.slice(0, 3).map((s) => (
+                {row.skills.slice(0, 2).map((s) => (
                   <span key={s} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
                     {s}
                   </span>
                 ))}
-                {row.skills.length > 3 && <span className="text-[10px] text-slate-400">+{row.skills.length - 3}</span>}
+                {row.skills.length > 2 && <span className="text-[10px] text-slate-400">+{row.skills.length - 2}</span>}
               </div>
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <span>{Math.round(row.utilization * 100)}% {t('resources.table.utilization').toLowerCase()}</span>
-                <span>{row.activeAssignments} {t('resourceProfile.assignments').toLowerCase()}</span>
-              </div>
+              <p className="text-xs text-slate-500">{row.activeAssignments} {t('resourceProfile.assignments').toLowerCase()}</p>
             </button>
           ))}
         </div>

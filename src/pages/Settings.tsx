@@ -138,6 +138,7 @@ export function Settings() {
 
   return (
     <AppShell title={t('settings.title')}>
+      <div className="mx-auto max-w-3xl">
       <div className="mb-3 flex justify-end">
         <Button variant="ghost" size="sm" onClick={() => navigate('/setup')}>
           <Wand2 className="h-4 w-4" /> {t('setup.title')}
@@ -152,7 +153,7 @@ export function Settings() {
         </TabsList>
 
         <TabsContent value="organization" className="mt-4">
-          <Card className="max-w-lg">
+          <Card className="max-w-xl">
             <CardHeader>
               <CardTitle>{t('settings.organization')}</CardTitle>
             </CardHeader>
@@ -163,11 +164,29 @@ export function Settings() {
               </div>
               <div>
                 <Label htmlFor="target-util">{t('settings.thresholds')}: Target Utilization ({Math.round(target * 100)}%)</Label>
-                <Input id="target-util" type="range" min={0.5} max={1} step={0.01} value={target} onChange={(e) => setTargetUtilization(Number(e.target.value))} />
+                <Input
+                  id="target-util"
+                  type="range"
+                  min={0.5}
+                  max={1}
+                  step={0.01}
+                  value={target}
+                  onChange={(e) => setTargetUtilization(Number(e.target.value))}
+                  className="accent-brand-600"
+                />
               </div>
               <div>
                 <Label htmlFor="overload-threshold">Overload Threshold ({Math.round(overload * 100)}%)</Label>
-                <Input id="overload-threshold" type="range" min={0.5} max={1.1} step={0.01} value={overload} onChange={(e) => setOverloadThreshold(Number(e.target.value))} />
+                <Input
+                  id="overload-threshold"
+                  type="range"
+                  min={0.5}
+                  max={1.1}
+                  step={0.01}
+                  value={overload}
+                  onChange={(e) => setOverloadThreshold(Number(e.target.value))}
+                  className="accent-brand-600"
+                />
               </div>
               <Button onClick={saveOrgSettings} disabled={savingOrg}>
                 {savingOrg ? t('common.loading') : t('common.save')}
@@ -272,6 +291,7 @@ export function Settings() {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </AppShell>
   )
 }

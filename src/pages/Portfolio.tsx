@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, SlidersHorizontal } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { BUCKET_ORDER, deriveRequestRiskSeverities, portfolioBucket } from '@/engine/dashboardMetrics'
 import type { PortfolioBucket } from '@/engine/dashboardMetrics'
-import { priorityTone, riskTone } from '@/lib/statusDisplay'
+import { priorityTone, riskTone, PROMINENT_PRIORITIES } from '@/lib/statusDisplay'
 import { entityShortLabel } from '@/lib/entityDisplay'
 import { formatDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
@@ -47,6 +47,8 @@ export function Portfolio() {
   const [priorityFilter, setPriorityFilter] = useState<PriorityLevel | 'all'>('all')
   const [riskFilter, setRiskFilter] = useState<RiskSeverity | 'all'>('all')
   const [entityFilter, setEntityFilter] = useState('all')
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const activeSecondaryFilters = (priorityFilter !== 'all' ? 1 : 0) + (riskFilter !== 'all' ? 1 : 0)
 
   const canManage = profile?.role === 'admin' || profile?.role === 'resource_manager'
 
@@ -96,26 +98,35 @@ export function Portfolio() {
   return (
     <AppShell title={t('portfolio.title')}>
       <div className="space-y-4">
-        <Card className="flex flex-wrap gap-3 p-3">
-          <Select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as PriorityLevel | 'all')} className="w-40">
-            <option value="all">{t('requests.table.priority')}: {t('common.all')}</option>
-            {(['critical', 'high', 'medium', 'low'] as const).map((p) => (
-              <option key={p} value={p}>{t(`priority.${p}`)}</option>
-            ))}
-          </Select>
-          <Select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value as RiskSeverity | 'all')} className="w-40">
-            <option value="all">{t('requests.table.risk')}: {t('common.all')}</option>
-            {(['critical', 'high', 'medium', 'low'] as const).map((r) => (
-              <option key={r} value={r}>{t(`risk.${r}`)}</option>
-            ))}
-          </Select>
+        <div className="flex flex-wrap items-center gap-3">
           <Select value={entityFilter} onChange={(e) => setEntityFilter(e.target.value)} className="w-56">
             <option value="all">{t('requests.table.entity')}: {t('common.all')}</option>
             {entities.map((e) => (
               <option key={e} value={e}>{e}</option>
             ))}
           </Select>
-        </Card>
+          <Button variant="secondary" size="sm" onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}>
+            <SlidersHorizontal className="h-4 w-4" />
+            {activeSecondaryFilters > 0 ? `${t('common.filters')} (${activeSecondaryFilters})` : t('common.filters')}
+          </Button>
+        </div>
+
+        {filtersOpen && (
+          <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-control)] bg-slate-100/50 p-3">
+            <Select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as PriorityLevel | 'all')} className="w-40">
+              <option value="all">{t('requests.table.priority')}: {t('common.all')}</option>
+              {(['critical', 'high', 'medium', 'low'] as const).map((p) => (
+                <option key={p} value={p}>{t(`priority.${p}`)}</option>
+              ))}
+            </Select>
+            <Select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value as RiskSeverity | 'all')} className="w-40">
+              <option value="all">{t('requests.table.risk')}: {t('common.all')}</option>
+              {(['critical', 'high', 'medium', 'low'] as const).map((r) => (
+                <option key={r} value={r}>{t(`risk.${r}`)}</option>
+              ))}
+            </Select>
+          </div>
+        )}
 
         <Tabs defaultValue="table">
           <TabsList>
@@ -142,7 +153,13 @@ export function Portfolio() {
                     <TR key={r.id} className="cursor-pointer" onClick={() => navigate(`/requests/${r.id}`)}>
                       <TD className="font-medium text-slate-800">{r.title}</TD>
                       <TD className="whitespace-nowrap" title={r.requesting_entity}>{entityShortLabel(r.requesting_entity)}</TD>
-                      <TD><Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge></TD>
+                      <TD>
+                        {PROMINENT_PRIORITIES.includes(r.priority_level) ? (
+                          <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
+                        ) : (
+                          <span className="text-sm text-slate-500">{t(`priority.${r.priority_level}`)}</span>
+                        )}
+                      </TD>
                       <TD>{formatDate(r.requested_deadline, locale)}</TD>
                       <TD>
                         {severityByRequest.get(r.id) ? (
@@ -198,7 +215,11 @@ export function Portfolio() {
                             {r.title}
                           </button>
                           <div className="mb-1.5 flex items-center gap-1.5">
-                            <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
+                            {PROMINENT_PRIORITIES.includes(r.priority_level) ? (
+                              <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
+                            ) : (
+                              <span className="text-[11px] text-slate-500">{t(`priority.${r.priority_level}`)}</span>
+                            )}
                             {severityByRequest.get(r.id) && <Badge tone={riskTone[severityByRequest.get(r.id)!]}>{t(`risk.${severityByRequest.get(r.id)!}`)}</Badge>}
                           </div>
                           <p className="mb-1.5 text-[10px] text-slate-400">{formatDate(r.requested_deadline, locale)}</p>

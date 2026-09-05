@@ -12,10 +12,15 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { Card } from '@/components/ui/card'
 import { deriveRequestRiskSeverities, isUnallocated } from '@/engine/dashboardMetrics'
-import { priorityTone, riskTone, statusTone } from '@/lib/statusDisplay'
+import { priorityTone, riskTone, statusTone, PROMINENT_PRIORITIES } from '@/lib/statusDisplay'
 import { entityShortLabel } from '@/lib/entityDisplay'
 import { formatDate } from '@/lib/utils'
 import type { PriorityLevel, RequestStatus, RiskSeverity } from '@/types/database'
+
+// Work Requests is a passive overview — only At Risk needs a pill here.
+// (Allocation Workspace treats Ready for Allocation as prominent too, since
+// there it directly implies the next action; that's a page-level choice.)
+const PROMINENT_STATUSES: readonly RequestStatus[] = ['at_risk']
 
 export function WorkRequests() {
   const { t, locale } = useI18n()
@@ -157,7 +162,11 @@ export function WorkRequests() {
                         {entityShortLabel(r.requesting_entity)}
                       </TD>
                       <TD>
-                        <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
+                        {PROMINENT_PRIORITIES.includes(r.priority_level) ? (
+                          <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
+                        ) : (
+                          <span className="text-sm text-slate-500">{t(`priority.${r.priority_level}`)}</span>
+                        )}
                       </TD>
                       <TD className="whitespace-nowrap">{formatDate(r.requested_deadline, locale)}</TD>
                       <TD className="whitespace-nowrap">
@@ -178,7 +187,11 @@ export function WorkRequests() {
                         )}
                       </TD>
                       <TD>
-                        <Badge tone={statusTone[r.status]}>{t(`status.${r.status}`)}</Badge>
+                        {PROMINENT_STATUSES.includes(r.status) ? (
+                          <Badge tone={statusTone[r.status]}>{t(`status.${r.status}`)}</Badge>
+                        ) : (
+                          <span className="text-sm text-slate-500">{t(`status.${r.status}`)}</span>
+                        )}
                       </TD>
                     </TR>
                   )

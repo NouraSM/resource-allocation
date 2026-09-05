@@ -63,16 +63,12 @@ export function Notifications() {
         {data.notifications.map((n) => {
           const Icon = SEVERITY_ICON[n.severity]
           return (
-            <Card
-              key={n.id}
-              className={cn('cursor-pointer p-3', !n.read && 'bg-slate-50')}
-              onClick={() => goToEntity(n)}
-            >
+            <Card key={n.id} className="cursor-pointer p-3" onClick={() => goToEntity(n)}>
               <div className="flex items-start gap-3">
                 <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', SEVERITY_CLASS[n.severity])} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-slate-800">{n.title}</p>
+                    <p className={cn('text-sm', n.read ? 'font-normal text-slate-600' : 'font-semibold text-slate-900')}>{n.title}</p>
                     {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-brand-600" />}
                   </div>
                   <p className="text-xs text-slate-500">{n.message}</p>
