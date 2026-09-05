@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
@@ -13,6 +13,7 @@ import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { Card } from '@/components/ui/card'
 import { deriveRequestRiskSeverities, isUnallocated } from '@/engine/dashboardMetrics'
 import { priorityTone, riskTone, statusTone } from '@/lib/statusDisplay'
+import { entityShortLabel } from '@/lib/entityDisplay'
 import { formatDate } from '@/lib/utils'
 import type { PriorityLevel, RequestStatus, RiskSeverity } from '@/types/database'
 
@@ -130,25 +131,35 @@ export function WorkRequests() {
               <TBody>
                 {filtered.map((r) => {
                   const severity = severityByRequest.get(r.id)
-                  const unallocated = isUnallocated(r, data.assignments)
+                  const assignedCount = data.assignments.filter((a) => a.request_id === r.id && a.status !== 'cancelled').length
                   return (
                     <TR key={r.id} className="cursor-pointer" onClick={() => navigate(`/requests/${r.id}`)}>
                       <TD>
-                        <p className="font-medium text-slate-800">{r.title}</p>
+                        <Link
+                          to={`/requests/${r.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="font-medium text-slate-800 hover:text-brand-700 hover:underline focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500"
+                        >
+                          {r.title}
+                        </Link>
                         <p className="text-xs text-slate-400">{r.request_number}</p>
                       </TD>
-                      <TD>{r.requesting_entity}</TD>
+                      <TD className="whitespace-nowrap" title={r.requesting_entity}>
+                        {entityShortLabel(r.requesting_entity)}
+                      </TD>
                       <TD>
                         <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
                       </TD>
-                      <TD>{formatDate(r.requested_deadline, locale)}</TD>
-                      <TD>
+                      <TD className="whitespace-nowrap">{formatDate(r.requested_deadline, locale)}</TD>
+                      <TD className="whitespace-nowrap">
                         {r.estimated_effort_hours} {t('common.hours')}
                       </TD>
-                      <TD>
-                        <Badge tone={unallocated ? 'attention' : 'healthy'}>{unallocated ? t('requests.unallocatedOnly') : t('common.yes')}</Badge>
+                      <TD className="whitespace-nowrap">
+                        <Badge tone={assignedCount === 0 ? 'attention' : 'healthy'}>
+                          {assignedCount === 0 ? t('allocationQueue.unallocated') : `${assignedCount} ${t('allocationQueue.assignedLabel')}`}
+                        </Badge>
                       </TD>
-                      <TD>{severity ? <Badge tone={riskTone[severity]}>{t(`risk.${severity}`)}</Badge> : <span className="text-slate-300">—</span>}</TD>
+                      <TD>{severity ? <Badge tone={riskTone[severity]}>{t(`risk.${severity}`)}</Badge> : <Badge tone="neutral">{t('risk.none')}</Badge>}</TD>
                       <TD>
                         <Badge tone={statusTone[r.status]}>{t(`status.${r.status}`)}</Badge>
                       </TD>

@@ -88,6 +88,7 @@ const ar = {
     medium: 'متوسط',
     high: 'عالٍ',
     critical: 'حرج',
+    none: 'لا يوجد خطر نشط',
   },
   utilization: {
     underutilized: 'أقل من الطاقة',

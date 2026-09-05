@@ -86,6 +86,7 @@ const en = {
     medium: 'Medium',
     high: 'High',
     critical: 'Critical',
+    none: 'No active risk',
   },
   utilization: {
     underutilized: 'Underutilized',
