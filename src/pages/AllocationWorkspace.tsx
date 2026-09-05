@@ -14,7 +14,7 @@ import { calculateCapacity, utilizationStatus } from '@/engine/capacity'
 import type { TeamMember, TeamScenario } from '@/engine/teamBuilder'
 import { priorityTone } from '@/lib/statusDisplay'
 import { formatDate } from '@/lib/utils'
-import { deriveScenarioBadges, hasTiedTopScenarios, summarizeInfeasibleReasons } from '@/lib/allocationDisplay'
+import { deriveScenarioBadges, hasSameTeamComposition, hasTiedTopScenarios, summarizeInfeasibleReasons } from '@/lib/allocationDisplay'
 import { ScenarioCard } from '@/components/allocation/ScenarioCard'
 import { ScenarioCompareTable } from '@/components/allocation/ScenarioCompareTable'
 import { EligibleRequestsPanel } from '@/components/allocation/EligibleRequestsPanel'
@@ -313,7 +313,12 @@ export function AllocationWorkspace() {
                 ))}
               </div>
               {hasTiedTopScenarios(builderResult.scenarios) && (
-                <p className="text-sm text-slate-500">{t('allocation.scenariosEquivalent')}</p>
+                <div className="space-y-0.5">
+                  <p className="text-sm text-slate-500">{t('allocation.scenariosEquivalent')}</p>
+                  {hasSameTeamComposition(builderResult.scenarios) && (
+                    <p className="text-xs text-slate-400">{t('allocation.sameTeamComposition')}</p>
+                  )}
+                </div>
               )}
               <ScenarioCompareTable scenarios={builderResult.scenarios} badgesByScenario={badgesByScenario} />
 

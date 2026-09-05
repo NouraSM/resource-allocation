@@ -17,6 +17,13 @@ const BADGE_META: Record<ScenarioBadgeKey, { icon: typeof Star; labelKey: string
 
 const RISK_RANK: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 }
 
+// Same unique-leader rule as the scenario evidence badges: emphasis is only
+// meaningful when exactly one scenario holds the best value — a tie gets
+// neutral text/no ring instead of highlighting every tied cell.
+function isUniqueBest(values: number[], value: number, best: number): boolean {
+  return value === best && values.filter((v) => v === best).length === 1
+}
+
 export function ScenarioCompareTable({
   scenarios,
   badgesByScenario,
@@ -76,7 +83,7 @@ export function ScenarioCompareTable({
               <TR key={row.label}>
                 <TD className="font-medium text-slate-600">{row.label}</TD>
                 {scenarios.map((s, i) => (
-                  <TD key={s.scenarioNumber} className={cn(values[i] === max && 'font-semibold text-status-healthy')}>
+                  <TD key={s.scenarioNumber} className={cn(isUniqueBest(values, values[i], max) && 'font-semibold text-status-healthy')}>
                     {values[i].toFixed(0)}
                   </TD>
                 ))}
@@ -94,9 +101,10 @@ export function ScenarioCompareTable({
             {(() => {
               const ranks = scenarios.map((s) => RISK_RANK[s.deliveryRisk.severity])
               const minRank = Math.min(...ranks)
+              const isUniqueBestRisk = ranks.filter((r) => r === minRank).length === 1
               return scenarios.map((s, i) => (
                 <TD key={s.scenarioNumber}>
-                  <Badge tone={riskTone[s.deliveryRisk.severity]} className={cn(ranks[i] === minRank && 'ring-1 ring-status-healthy')}>
+                  <Badge tone={riskTone[s.deliveryRisk.severity]} className={cn(ranks[i] === minRank && isUniqueBestRisk && 'ring-1 ring-status-healthy')}>
                     {t(`risk.${s.deliveryRisk.severity}`)}
                   </Badge>
                 </TD>

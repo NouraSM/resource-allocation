@@ -7,6 +7,7 @@ import type { TeamScenario } from '@/engine/teamBuilder'
 import type { EngineAssignment, EngineResource, OrgSettings } from '@/engine/types'
 import { applyWhatIfChanges, compareUtilization, recommendationFromComparisons } from '@/engine/scenario'
 import { utilizationTone } from '@/lib/statusDisplay'
+import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 
 export function WhatIfDialog({
@@ -64,7 +65,12 @@ export function WhatIfDialog({
   }, [scenario, resources, assignments, org, today, rangeEnd, requestId])
 
   const recommendation = useMemo(() => recommendationFromComparisons(comparisons, []), [comparisons])
-  const anyOverloaded = comparisons.some((c) => c.after.utilization > 100)
+  // Status is already computed against the org's real overload threshold
+  // (utilizationStatus() in the engine), so this stays in sync with whatever
+  // threshold is configured — unlike a raw ">100%" check.
+  const anyCritical = comparisons.some((c) => c.after.status === 'critical')
+  const anyOverThreshold = comparisons.some((c) => c.after.status === 'overloaded' || c.after.status === 'critical')
+  const overThresholdOnly = anyOverThreshold && !anyCritical
 
   // Persist the simulation as a scenario_run (never touches live assignments)
   // so what-if exploration leaves an audit trail, once per scenario per open.
@@ -108,12 +114,17 @@ export function WhatIfDialog({
           ))}
         </div>
 
-        <div className={`rounded-md p-3 text-sm ${anyOverloaded ? 'bg-status-critical-bg text-status-critical' : 'bg-status-healthy-bg text-status-healthy'}`}>
+        <div
+          className={cn(
+            'rounded-md p-3 text-sm',
+            anyCritical ? 'bg-status-critical-bg text-status-critical' : overThresholdOnly ? 'bg-status-attention-bg text-status-attention' : 'bg-status-healthy-bg text-status-healthy',
+          )}
+        >
           <p className="font-semibold">{t('whatif.recommendation')}</p>
-          <p className="mt-0.5 text-xs">{recommendation}</p>
+          <p className="mt-0.5 text-xs">{overThresholdOnly ? t('whatif.overloadWarning') : recommendation}</p>
         </div>
 
-        {anyOverloaded && alternativeScenario && (
+        {anyOverThreshold && alternativeScenario && (
           <div className="rounded-md border border-slate-200 p-3 text-xs text-slate-600">
             <p className="font-semibold text-slate-700">{t('whatif.alternative')}</p>
             <p className="mt-1">

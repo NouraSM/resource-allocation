@@ -24,13 +24,16 @@ export function ApprovalDialog({
 
   const titleKey = action === 'approve' ? 'approval.approveTitle' : action === 'modify' ? 'approval.modifyTitle' : 'approval.rejectTitle'
   const requiresReason = action !== 'approve'
+  const firstFieldLabel = action === 'modify' ? t('approval.changeReason') : t('common.reason')
+  const secondFieldLabel = action === 'modify' ? t('approval.notes') : t('common.reason')
+  const confirmLabel = action === 'modify' ? t('approval.confirmChanges') : t(`common.${action}`)
 
   return (
     <Dialog open={open} onClose={onClose} title={t(titleKey)}>
       <div className="space-y-3">
         {requiresReason && (
           <div>
-            <Label htmlFor="reason-code">{t('common.reason')}</Label>
+            <Label htmlFor="reason-code">{firstFieldLabel}</Label>
             <Select id="reason-code" value={reasonCode} onChange={(e) => setReasonCode(e.target.value as ApprovalReasonCode)}>
               <option value="skill">{t('approval.reasonSkill')}</option>
               <option value="strategic">{t('approval.reasonStrategic')}</option>
@@ -42,7 +45,7 @@ export function ApprovalDialog({
           </div>
         )}
         <div>
-          <Label htmlFor="note">{t('common.reason')} ({t('common.optional')})</Label>
+          <Label htmlFor="note">{secondFieldLabel} ({t('common.optional')})</Label>
           <Textarea id="note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
         <div className="flex justify-end gap-2">
@@ -56,7 +59,7 @@ export function ApprovalDialog({
               setNote('')
             }}
           >
-            {t(`common.${action}`)}
+            {confirmLabel}
           </Button>
         </div>
       </div>

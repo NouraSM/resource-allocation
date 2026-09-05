@@ -233,6 +233,7 @@ const en = {
     showRationale: 'Show rationale',
     hideRationale: 'Hide rationale',
     scenariosEquivalent: 'Scenarios are equivalent based on the current criteria.',
+    sameTeamComposition: 'All scenarios currently resolve to the same team.',
     excludedCountLabel: 'resources excluded',
     topReasons: 'Top reasons',
     viewExcluded: 'View excluded resources',
@@ -280,8 +281,11 @@ const en = {
   },
   approval: {
     approveTitle: 'Approve Allocation',
-    modifyTitle: 'Modify Team',
+    modifyTitle: 'Confirm Team Modification',
     rejectTitle: 'Reject Recommendation',
+    changeReason: 'Change reason',
+    notes: 'Notes',
+    confirmChanges: 'Confirm Changes',
     reasonSkill: 'Skill considerations',
     reasonStrategic: 'Strategic preference',
     reasonContinuity: 'Continuity',
@@ -379,6 +383,7 @@ const en = {
     apply: 'Apply Change',
     recommendation: 'Recommendation',
     alternative: 'Alternative',
+    overloadWarning: 'This change would push the resource above the overload threshold. Review before approving.',
   },
 } as const
 

@@ -56,6 +56,15 @@ export function hasTiedTopScenarios(scenarios: TeamScenario[]): boolean {
   return withMembers.filter((s) => s.teamScore === max).length > 1
 }
 
+/** True when every scenario with members has the exact same set of resources — not just tied scores. */
+export function hasSameTeamComposition(scenarios: TeamScenario[]): boolean {
+  const withMembers = scenarios.filter((s) => s.members.length > 0)
+  if (withMembers.length < 2) return false
+  const keyOf = (s: TeamScenario) => s.members.map((m) => m.resourceId).sort().join('|')
+  const firstKey = keyOf(withMembers[0])
+  return withMembers.every((s) => keyOf(s) === firstKey)
+}
+
 /** Requests already allocated/in-progress/at-risk get a "review" CTA instead of "generate". */
 const REVIEW_STATUSES = ['allocated', 'in_progress', 'at_risk'] as const
 

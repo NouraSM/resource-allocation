@@ -235,6 +235,7 @@ const ar = {
     showRationale: 'إظهار المبررات',
     hideRationale: 'إخفاء المبررات',
     scenariosEquivalent: 'السيناريوهات متكافئة بناءً على المعايير الحالية.',
+    sameTeamComposition: 'تؤول جميع السيناريوهات حالياً إلى الفريق نفسه.',
     excludedCountLabel: 'مورد مستبعد',
     topReasons: 'أهم الأسباب',
     viewExcluded: 'عرض الموارد المستبعدة',
@@ -282,8 +283,11 @@ const ar = {
   },
   approval: {
     approveTitle: 'اعتماد التخصيص',
-    modifyTitle: 'تعديل الفريق',
+    modifyTitle: 'تأكيد تعديل الفريق',
     rejectTitle: 'رفض التوصية',
+    changeReason: 'سبب التغيير',
+    notes: 'ملاحظات',
+    confirmChanges: 'تأكيد التغييرات',
     reasonSkill: 'اعتبارات المهارة',
     reasonStrategic: 'تفضيل استراتيجي',
     reasonContinuity: 'الاستمرارية',
@@ -381,6 +385,7 @@ const ar = {
     apply: 'تطبيق التغيير',
     recommendation: 'التوصية',
     alternative: 'البديل',
+    overloadWarning: 'سيؤدي هذا التغيير إلى تجاوز المورد لحد التحميل الزائد. راجع الأمر قبل الاعتماد.',
   },
 } as const satisfies TranslationDict
 
