@@ -290,43 +290,32 @@ availability.push({
 // ---------------------------------------------------------------------------
 // Work requests (18)
 // ---------------------------------------------------------------------------
-const ENTITIES = [
-  'Ministry of Economy and Planning',
-  'Ministry of Health',
-  'Ministry of Transport',
-  'Ministry of Communications and IT',
-  'National Center for Government Excellence',
-  'Ministry of Labor and Social Development',
-  'Ministry of Finance',
-  'Ministry of Investment',
-  'Capital Municipality',
-  'Digital Government Authority',
-]
-
+// Senior Saudi government councils and central high-level bodies only.
+// Ministries/authorities/agencies appear as stakeholders, never as the requesting entity.
 const TIERS = { low: 20, medium: 50, high: 75, critical: 95 }
 const YESNO = { yes: 90, no: 10 }
 const PUBLIC = { low: 20, medium: 50, high: 80 }
 const DEPEND = { none: 10, some: 50, critical: 90 }
 
 const REQUEST_SEED = [
-  { title: 'Healthcare Sector Strategy Review', type: 'Strategy Study', complexity: 'high', deadlineDays: 21, strategic: 'critical', exec: 'yes', reg: 'no', pub: 'high', dep: 'some', status: 'in_progress', effort: 620 },
-  { title: 'International Benchmarking Study — Public Transport', type: 'Benchmarking', complexity: 'medium', deadlineDays: 45, strategic: 'medium', exec: 'no', reg: 'no', pub: 'medium', dep: 'none', status: 'in_progress', effort: 340 },
-  { title: 'Government Operating Model Review', type: 'Operating Model', complexity: 'very_high', deadlineDays: 60, strategic: 'critical', exec: 'yes', reg: 'no', pub: 'medium', dep: 'critical', status: 'allocated', effort: 780 },
-  { title: 'Economic Impact Assessment — Free Zones', type: 'Economic Study', complexity: 'high', deadlineDays: 10, strategic: 'high', exec: 'yes', reg: 'yes', pub: 'medium', dep: 'some', status: 'at_risk', effort: 410 },
-  { title: 'Executive Dashboard Development', type: 'Data & Analytics', complexity: 'medium', deadlineDays: 14, strategic: 'medium', exec: 'yes', reg: 'no', pub: 'low', dep: 'none', status: 'in_progress', effort: 220 },
-  { title: 'Policy Evaluation — Labor Market Reform', type: 'Policy Study', complexity: 'high', deadlineDays: -4, strategic: 'high', exec: 'no', reg: 'yes', pub: 'high', dep: 'some', status: 'at_risk', effort: 360 },
-  { title: 'Service Transformation Assessment — Citizen Services', type: 'Transformation', complexity: 'high', deadlineDays: 30, strategic: 'high', exec: 'yes', reg: 'no', pub: 'high', dep: 'some', status: 'ready_for_allocation', effort: 480 },
-  { title: 'Digital Maturity Review', type: 'Digital Transformation', complexity: 'medium', deadlineDays: 50, strategic: 'medium', exec: 'no', reg: 'no', pub: 'low', dep: 'none', status: 'submitted', effort: 260 },
-  { title: 'Strategic KPI Framework Design', type: 'Strategy Study', complexity: 'medium', deadlineDays: 25, strategic: 'high', exec: 'yes', reg: 'no', pub: 'medium', dep: 'some', status: 'ready_for_allocation', effort: 300 },
-  { title: 'Resource Optimization Study', type: 'Operations', complexity: 'medium', deadlineDays: 6, strategic: 'medium', exec: 'no', reg: 'no', pub: 'low', dep: 'none', status: 'at_risk', effort: 250 },
-  { title: 'National Data Strategy Alignment', type: 'Strategy Study', complexity: 'very_high', deadlineDays: 70, strategic: 'critical', exec: 'yes', reg: 'yes', pub: 'medium', dep: 'critical', status: 'in_progress', effort: 700 },
-  { title: 'Ministerial Change Management Program', type: 'Change Management', complexity: 'high', deadlineDays: 40, strategic: 'high', exec: 'yes', reg: 'no', pub: 'medium', dep: 'some', status: 'allocated', effort: 390 },
-  { title: 'Regulatory Impact Study — Fintech', type: 'Policy Study', complexity: 'high', deadlineDays: 12, strategic: 'high', exec: 'no', reg: 'yes', pub: 'medium', dep: 'some', status: 'under_review', effort: 320 },
-  { title: 'Stakeholder Engagement Framework', type: 'Strategy Study', complexity: 'low', deadlineDays: 35, strategic: 'medium', exec: 'no', reg: 'no', pub: 'low', dep: 'none', status: 'submitted', effort: 150 },
-  { title: 'Program Governance Health Check', type: 'Program Management', complexity: 'medium', deadlineDays: 2, strategic: 'medium', exec: 'no', reg: 'no', pub: 'low', dep: 'some', status: 'at_risk', effort: 180 },
-  { title: 'Public-Private Partnership Feasibility Study', type: 'Economic Study', complexity: 'very_high', deadlineDays: 55, strategic: 'high', exec: 'yes', reg: 'yes', pub: 'medium', dep: 'critical', status: 'ready_for_allocation', effort: 640 },
-  { title: 'Workforce Planning Model Update', type: 'Operations', complexity: 'low', deadlineDays: 80, strategic: 'low', exec: 'no', reg: 'no', pub: 'low', dep: 'none', status: 'draft', effort: 120 },
-  { title: 'Sector Competitiveness Benchmark', type: 'Benchmarking', complexity: 'medium', deadlineDays: 18, strategic: 'medium', exec: 'no', reg: 'no', pub: 'medium', dep: 'none', status: 'in_progress', effort: 280 },
+  { title: 'National Healthcare Sector Strategy Review', type: 'Strategy Study', complexity: 'high', deadlineDays: 21, strategic: 'critical', exec: 'yes', reg: 'no', pub: 'high', dep: 'some', status: 'in_progress', effort: 620, entity: 'Council of Economic and Development Affairs', stakeholders: ['Ministry of Health', 'National Center for Government Excellence'] },
+  { title: 'International Competitiveness Benchmarking — National Transport & Logistics Sector', type: 'Benchmarking', complexity: 'medium', deadlineDays: 45, strategic: 'medium', exec: 'no', reg: 'no', pub: 'medium', dep: 'none', status: 'in_progress', effort: 340, entity: 'Council of Economic and Development Affairs', stakeholders: ['Ministry of Transport', 'Ministry of Investment'] },
+  { title: 'Government Operating Model Review — Cross-Ministerial Restructuring', type: 'Operating Model', complexity: 'very_high', deadlineDays: 60, strategic: 'critical', exec: 'yes', reg: 'no', pub: 'medium', dep: 'critical', status: 'allocated', effort: 780, entity: 'Council of Ministers', stakeholders: ['General Secretariat of the Council of Ministers', 'National Center for Government Excellence'] },
+  { title: 'Economic Impact Assessment — National Special Economic Zones Program', type: 'Economic Study', complexity: 'high', deadlineDays: 10, strategic: 'high', exec: 'yes', reg: 'yes', pub: 'medium', dep: 'some', status: 'at_risk', effort: 410, entity: 'Council of Economic and Development Affairs', stakeholders: ['Ministry of Investment', 'Ministry of Economy and Planning'] },
+  { title: 'National Cabinet Performance Dashboard Development', type: 'Data & Analytics', complexity: 'medium', deadlineDays: 14, strategic: 'medium', exec: 'yes', reg: 'no', pub: 'low', dep: 'none', status: 'in_progress', effort: 220, entity: 'General Secretariat of the Council of Ministers', stakeholders: ['National Center for Government Excellence', 'Ministry of Economy and Planning'] },
+  { title: 'Legislative Policy Evaluation — National Labor Market Reform', type: 'Policy Study', complexity: 'high', deadlineDays: -4, strategic: 'high', exec: 'no', reg: 'yes', pub: 'high', dep: 'some', status: 'at_risk', effort: 360, entity: 'Shura Council', stakeholders: ['Ministry of Human Resources and Social Development'] },
+  { title: 'National Citizen Services Transformation Assessment', type: 'Transformation', complexity: 'high', deadlineDays: 30, strategic: 'high', exec: 'yes', reg: 'no', pub: 'high', dep: 'some', status: 'ready_for_allocation', effort: 480, entity: 'Council of Economic and Development Affairs', stakeholders: ['Digital Government Authority', 'Ministry of Interior', 'Ministry of Human Resources and Social Development'] },
+  { title: 'National Government Digital Maturity Review', type: 'Digital Transformation', complexity: 'medium', deadlineDays: 50, strategic: 'medium', exec: 'no', reg: 'no', pub: 'low', dep: 'none', status: 'submitted', effort: 260, entity: 'General Secretariat of the Council of Ministers', stakeholders: ['Digital Government Authority', 'National Center for Government Excellence'] },
+  { title: 'National Strategic KPI Framework Design — Cabinet Performance Monitoring', type: 'Strategy Study', complexity: 'medium', deadlineDays: 25, strategic: 'high', exec: 'yes', reg: 'no', pub: 'medium', dep: 'some', status: 'ready_for_allocation', effort: 300, entity: 'General Secretariat of the Council of Ministers', stakeholders: ['National Center for Government Excellence', 'Ministry of Economy and Planning'] },
+  { title: 'National Productivity & Resource Optimization Study', type: 'Operations', complexity: 'medium', deadlineDays: 6, strategic: 'medium', exec: 'no', reg: 'no', pub: 'low', dep: 'none', status: 'at_risk', effort: 250, entity: 'Council of Economic and Development Affairs', stakeholders: ['Ministry of Economy and Planning', 'National Center for Government Excellence'] },
+  { title: 'National Data Governance Strategy Alignment', type: 'Strategy Study', complexity: 'very_high', deadlineDays: 70, strategic: 'critical', exec: 'yes', reg: 'yes', pub: 'medium', dep: 'critical', status: 'in_progress', effort: 700, entity: 'Royal Court', stakeholders: ['Ministry of Communications and Information Technology', 'Digital Government Authority', 'Ministry of Economy and Planning'] },
+  { title: 'Cross-Ministerial Change Management Program', type: 'Change Management', complexity: 'high', deadlineDays: 40, strategic: 'high', exec: 'yes', reg: 'no', pub: 'medium', dep: 'some', status: 'allocated', effort: 390, entity: 'Council of Ministers', stakeholders: ['National Center for Government Excellence'] },
+  { title: 'Regulatory Impact Study — National Fintech Regulatory Framework', type: 'Policy Study', complexity: 'high', deadlineDays: 12, strategic: 'high', exec: 'no', reg: 'yes', pub: 'medium', dep: 'some', status: 'under_review', effort: 320, entity: 'Shura Council', stakeholders: ['Ministry of Finance', 'Ministry of Investment'] },
+  { title: 'National Public & Stakeholder Consultation Framework', type: 'Strategy Study', complexity: 'low', deadlineDays: 35, strategic: 'medium', exec: 'no', reg: 'no', pub: 'low', dep: 'none', status: 'submitted', effort: 150, entity: 'Shura Council', stakeholders: ['General Secretariat of the Council of Ministers', 'National Center for Government Excellence'] },
+  { title: 'National Resilience Program Governance Health Check', type: 'Program Management', complexity: 'medium', deadlineDays: 2, strategic: 'medium', exec: 'no', reg: 'no', pub: 'low', dep: 'some', status: 'at_risk', effort: 180, entity: 'Council of Political and Security Affairs', stakeholders: ['Ministry of Interior', 'Presidency of State Security'] },
+  { title: 'National PPP Program Feasibility Study — Priority Sectors', type: 'Economic Study', complexity: 'very_high', deadlineDays: 55, strategic: 'high', exec: 'yes', reg: 'yes', pub: 'medium', dep: 'critical', status: 'ready_for_allocation', effort: 640, entity: 'Council of Economic and Development Affairs', stakeholders: ['Ministry of Investment', 'Ministry of Finance'] },
+  { title: 'National Security Sector Workforce Planning Model Update', type: 'Operations', complexity: 'low', deadlineDays: 80, strategic: 'low', exec: 'no', reg: 'no', pub: 'low', dep: 'none', status: 'draft', effort: 120, entity: 'Council of Political and Security Affairs', stakeholders: ['Ministry of Interior', 'Ministry of Defense'] },
+  { title: 'National Sector Competitiveness Benchmark — Vision 2030 Priority Sectors', type: 'Benchmarking', complexity: 'medium', deadlineDays: 18, strategic: 'medium', exec: 'no', reg: 'no', pub: 'medium', dep: 'none', status: 'in_progress', effort: 280, entity: 'Council of Economic and Development Affairs', stakeholders: ['Ministry of Investment', 'Ministry of Economy and Planning'] },
 ]
 
 const requests = REQUEST_SEED.map((r, idx) => {
@@ -342,7 +331,8 @@ const requests = REQUEST_SEED.map((r, idx) => {
     id: randomUUID(),
     idx,
     title: r.title,
-    requesting_entity: ENTITIES[idx % ENTITIES.length],
+    requesting_entity: r.entity,
+    stakeholders: r.stakeholders,
     requester_name: pick(['Dr. Fahad Al-Ruwaili', 'Eng. Mona Al-Tamimi', 'Mr. Salem Al-Kathiri', 'Ms. Areej Al-Harbi', 'Dr. Bassam Al-Otaibi'], 1)[0],
     request_type: r.type,
     received_date: dt(addDays(today, -(14 + Math.floor(rand() * 60)))),
@@ -672,7 +662,7 @@ p(
     .map(
       (r, i) =>
         `  (${sql(r.id)}, ${sql(ORG_ID)}, ${sql(`REQ-${new Date().getFullYear()}-${String(i + 1).padStart(4, '0')}`)}, ${sql(r.title)}, ${sql(
-          `Requested by ${r.requesting_entity} to support ${r.request_type?.toLowerCase()} objectives.`,
+          `Requested by ${r.requesting_entity} to support ${r.request_type?.toLowerCase()} objectives, in coordination with ${r.stakeholders.join(' and ')}.`,
         )}, ${sql(r.requesting_entity)}, ${sql(r.requester_name)}, ${sql(r.request_type)}, ${sql(r.received_date)}, ${sql(r.requested_deadline)}, ${r.strategic_importance}, ${r.executive_sponsorship}, ${r.regulatory_importance}, ${r.public_impact}, ${r.dependency_impact}, ${r.urgency_score}, ${r.priority_score}, ${sql(r.priority_level)}, ${r.estimated_effort_hours}, ${sql(r.complexity)}, ${sql(r.status)}, ${sql(users[1].id)})`,
     )
     .join(',\n') + '\non conflict do nothing;',
