@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Clock, Scale, Star, Target, User } from 'lucide-react'
+import { Clock, FlaskConical, Scale, Star, Target, User } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -127,15 +127,15 @@ export function ScenarioCard({
         )}
       </CardContent>
       {canManage && (
-        <div className="flex gap-2 border-t border-slate-100 p-3">
+        <div className="flex items-center gap-2 border-t border-slate-100 p-3">
           <Button size="sm" className="flex-1" onClick={onApprove} disabled={scenario.members.length === 0}>
             {t('common.approve')}
           </Button>
-          <Button size="sm" variant="secondary" onClick={onModify} disabled={scenario.members.length === 0}>
+          <Button size="sm" variant="secondary" className="flex-1" onClick={onModify} disabled={scenario.members.length === 0}>
             {t('allocation.modifyTeam')}
           </Button>
-          <Button size="sm" variant="ghost" onClick={onWhatIf}>
-            {t('allocation.runWhatIf')}
+          <Button size="icon" variant="ghost" onClick={onWhatIf} aria-label={t('allocation.runWhatIf')} title={t('allocation.runWhatIf')}>
+            <FlaskConical className="h-4 w-4" />
           </Button>
         </div>
       )}

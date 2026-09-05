@@ -14,7 +14,7 @@ import { calculateCapacity, utilizationStatus } from '@/engine/capacity'
 import type { TeamMember, TeamScenario } from '@/engine/teamBuilder'
 import { priorityTone } from '@/lib/statusDisplay'
 import { formatDate } from '@/lib/utils'
-import { deriveScenarioBadges } from '@/lib/allocationDisplay'
+import { deriveScenarioBadges, hasTiedTopScenarios, summarizeInfeasibleReasons } from '@/lib/allocationDisplay'
 import { ScenarioCard } from '@/components/allocation/ScenarioCard'
 import { ScenarioCompareTable } from '@/components/allocation/ScenarioCompareTable'
 import { EligibleRequestsPanel } from '@/components/allocation/EligibleRequestsPanel'
@@ -42,6 +42,7 @@ export function AllocationWorkspace() {
   const [whatIfOpen, setWhatIfOpen] = useState(false)
   const [persisted, setPersisted] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [excludedOpen, setExcludedOpen] = useState(false)
 
   useEffect(() => {
     setSelectedRequestId(requestId ?? '')
@@ -81,6 +82,7 @@ export function AllocationWorkspace() {
   // schema fulfillment) without spamming inserts on every re-render.
   useEffect(() => {
     setPersisted(false)
+    setExcludedOpen(false)
   }, [selectedRequestId])
 
   useEffect(() => {
@@ -310,6 +312,9 @@ export function AllocationWorkspace() {
                   />
                 ))}
               </div>
+              {hasTiedTopScenarios(builderResult.scenarios) && (
+                <p className="text-sm text-slate-500">{t('allocation.scenariosEquivalent')}</p>
+              )}
               <ScenarioCompareTable scenarios={builderResult.scenarios} badgesByScenario={badgesByScenario} />
 
               {builderResult.notFeasible.length > 0 && (
@@ -317,13 +322,38 @@ export function AllocationWorkspace() {
                   <CardHeader>
                     <CardTitle>{t('allocation.notFeasible')}</CardTitle>
                   </CardHeader>
-                  <CardContent className="grid gap-2 sm:grid-cols-2">
-                    {builderResult.notFeasible.map((c) => (
-                      <div key={c.resource.id} className="rounded-md border border-slate-100 p-2 text-xs">
-                        <p className="font-medium text-slate-700">{c.resource.fullName}</p>
-                        <p className="text-slate-500">{c.infeasibleReasons.join(' ')}</p>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-slate-500">
+                      {builderResult.notFeasible.length} {t('allocation.excludedCountLabel')}
+                    </p>
+                    <div>
+                      <p className="mb-1.5 text-xs font-semibold text-slate-400">{t('allocation.topReasons')}</p>
+                      <ul className="space-y-1">
+                        {summarizeInfeasibleReasons(builderResult.notFeasible).map((r) => (
+                          <li key={r.reason} className="flex items-start gap-2 text-xs text-slate-600">
+                            <span className="mt-0.5 shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-500">{r.count}×</span>
+                            <span>{r.reason}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setExcludedOpen((o) => !o)}
+                      className="text-xs font-medium text-slate-500 hover:text-slate-700"
+                    >
+                      {excludedOpen ? t('allocation.hideExcluded') : t('allocation.viewExcluded')}
+                    </button>
+                    {excludedOpen && (
+                      <div className="grid gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2">
+                        {builderResult.notFeasible.map((c) => (
+                          <div key={c.resource.id} className="rounded-md border border-slate-100 p-2 text-xs">
+                            <p className="font-medium text-slate-700">{c.resource.fullName}</p>
+                            <p className="text-slate-500">{c.infeasibleReasons.join(' ')}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </CardContent>
                 </Card>
               )}

@@ -8,13 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Select } from '@/components/ui/input'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { formatDate } from '@/lib/utils'
-
-function summarizeValue(value: Record<string, unknown> | null): string {
-  if (!value) return '—'
-  return Object.entries(value)
-    .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
-    .join(', ')
-}
+import { humanizeAction, humanizeEntityType, summarizeAuditValue } from '@/lib/auditDisplay'
 
 export function AuditLog() {
   const { t, locale } = useI18n()
@@ -36,7 +30,7 @@ export function AuditLog() {
           <option value="all">{t('auditLog.action')}: {t('common.all')}</option>
           {actions.map((a) => (
             <option key={a} value={a}>
-              {a.replace(/_/g, ' ')}
+              {humanizeAction(a)}
             </option>
           ))}
         </Select>
@@ -61,8 +55,8 @@ export function AuditLog() {
                     <TR className="cursor-pointer" onClick={() => setExpandedId(expanded ? null : a.id)}>
                       <TD className="whitespace-nowrap text-xs">{formatDate(a.created_at, locale)}</TD>
                       <TD className="text-xs">{user?.full_name ?? '—'}</TD>
-                      <TD className="whitespace-nowrap text-xs capitalize">{a.action.replace(/_/g, ' ')}</TD>
-                      <TD className="text-xs">{a.entity_type}</TD>
+                      <TD className="whitespace-nowrap text-xs">{humanizeAction(a.action)}</TD>
+                      <TD className="text-xs">{humanizeEntityType(a.entity_type)}</TD>
                       <TD className="text-xs text-slate-500">{a.reason ?? '—'}</TD>
                       <TD className="whitespace-nowrap">
                         <span className="flex items-center gap-1 text-xs text-slate-400">
@@ -77,11 +71,11 @@ export function AuditLog() {
                           <div className="grid gap-3 py-1 text-xs text-slate-600 sm:grid-cols-2">
                             <div>
                               <p className="mb-1 font-semibold text-slate-400">{t('auditLog.before')}</p>
-                              <p className="break-words">{summarizeValue(a.old_value)}</p>
+                              <p className="break-words">{summarizeAuditValue(a.old_value)}</p>
                             </div>
                             <div>
                               <p className="mb-1 font-semibold text-slate-400">{t('auditLog.after')}</p>
-                              <p className="break-words">{summarizeValue(a.new_value)}</p>
+                              <p className="break-words">{summarizeAuditValue(a.new_value)}</p>
                             </div>
                           </div>
                         </TD>

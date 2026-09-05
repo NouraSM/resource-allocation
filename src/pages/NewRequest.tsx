@@ -23,6 +23,7 @@ import {
 } from '@/engine/priority'
 import type { DependencyOption, PublicImpactOption, StrategicImportanceOption, YesNoOption } from '@/engine/priority'
 import { priorityTone } from '@/lib/statusDisplay'
+import { SENIOR_ENTITIES } from '@/lib/entityDisplay'
 import { formatNumber } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
@@ -46,6 +47,7 @@ export function NewRequest() {
   const [deadline, setDeadline] = useState('')
 
   const [analyzing, setAnalyzing] = useState(false)
+  const [analyzed, setAnalyzed] = useState(false)
   const [aiUnavailable, setAiUnavailable] = useState(false)
   const [aiSummary, setAiSummary] = useState<string | null>(null)
   const [requestType, setRequestType] = useState('')
@@ -91,6 +93,7 @@ export function NewRequest() {
       setAiUnavailable(true)
       return
     }
+    setAnalyzed(true)
     setRequestType(result.data.requestType)
     setComplexity(result.data.complexity)
     setEffortHours(Math.round((result.data.estimatedEffortHoursMin + result.data.estimatedEffortHoursMax) / 2))
@@ -205,7 +208,14 @@ export function NewRequest() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="entity">{t('newRequest.entityLabel')}</Label>
-                  <Input id="entity" value={entity} onChange={(e) => setEntity(e.target.value)} />
+                  <Select id="entity" value={entity} onChange={(e) => setEntity(e.target.value)}>
+                    <option value="">{t('newRequest.selectEntity')}</option>
+                    {SENIOR_ENTITIES.map((e) => (
+                      <option key={e.value} value={e.value}>
+                        {t(e.labelKey)}
+                      </option>
+                    ))}
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="requester">{t('newRequest.requesterLabel')}</Label>
@@ -239,14 +249,29 @@ export function NewRequest() {
                 </div>
               )}
               {aiSummary && <p className="rounded-md bg-brand-50 p-2 text-xs text-brand-700">{aiSummary}</p>}
+              {!analyzed && !aiSummary && <p className="text-xs text-slate-400">{t('newRequest.notAnalyzedNotice')}</p>}
               <div className="grid gap-3 sm:grid-cols-3">
                 <div>
                   <Label htmlFor="requestType">{t('newRequest.requestType')}</Label>
-                  <Input id="requestType" value={requestType} onChange={(e) => setRequestType(e.target.value)} />
+                  <Input
+                    id="requestType"
+                    value={requestType}
+                    onChange={(e) => {
+                      setRequestType(e.target.value)
+                      setAnalyzed(true)
+                    }}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="complexity">{t('newRequest.complexity')}</Label>
-                  <Select id="complexity" value={complexity} onChange={(e) => setComplexity(e.target.value as Complexity)}>
+                  <Select
+                    id="complexity"
+                    value={complexity}
+                    onChange={(e) => {
+                      setComplexity(e.target.value as Complexity)
+                      setAnalyzed(true)
+                    }}
+                  >
                     {(['low', 'medium', 'high', 'very_high'] as const).map((c) => (
                       <option key={c} value={c}>
                         {c.replace('_', ' ')}
@@ -256,7 +281,16 @@ export function NewRequest() {
                 </div>
                 <div>
                   <Label htmlFor="effort">{t('newRequest.estimatedEffort')}</Label>
-                  <Input id="effort" type="number" min={0} value={effortHours} onChange={(e) => setEffortHours(Number(e.target.value))} />
+                  <Input
+                    id="effort"
+                    type="number"
+                    min={0}
+                    value={effortHours}
+                    onChange={(e) => {
+                      setEffortHours(Number(e.target.value))
+                      setAnalyzed(true)
+                    }}
+                  />
                 </div>
               </div>
 
@@ -303,7 +337,7 @@ export function NewRequest() {
                     ))}
                   </Select>
                   <Button variant="secondary" size="sm" onClick={addSkillManually}>
-                    {t('common.create')}
+                    {t('newRequest.addSkill')}
                   </Button>
                 </div>
               </div>

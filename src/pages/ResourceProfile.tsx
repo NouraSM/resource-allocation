@@ -12,8 +12,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { computeResourceUtilizations, weeklyCapacitySeries } from '@/engine/dashboardMetrics'
-import { utilizationTone, priorityTone } from '@/lib/statusDisplay'
-import { formatDate } from '@/lib/utils'
+import { utilizationTone, utilizationTextClass, priorityTone, PROMINENT_PRIORITIES } from '@/lib/statusDisplay'
+import { formatDate, cn } from '@/lib/utils'
 import { ResourceFormDialog } from '@/components/resources/ResourceFormDialog'
 import type { ResourceFormValues } from '@/components/resources/ResourceFormDialog'
 import { supabase } from '@/lib/supabase'
@@ -93,12 +93,16 @@ export function ResourceProfile() {
               <CardTitle>{t('resourceProfile.upcomingCapacity')}</CardTitle>
             </CardHeader>
             <CardContent>
+              <p className="mb-2 text-xs text-slate-400">{t('resourceProfile.upcomingCapacityHint')}</p>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={weekly}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="weekStart" tickFormatter={(v) => formatDate(v, locale)} fontSize={11} />
                   <YAxis fontSize={11} />
-                  <Tooltip labelFormatter={(v) => formatDate(v as string, locale)} formatter={(v) => `${v} ${t('common.hours')}`} />
+                  <Tooltip
+                    labelFormatter={(v) => formatDate(v as string, locale)}
+                    formatter={(v) => [`${v} ${t('common.hours')}${Number(v) < 0 ? ` (${t('resourceProfile.overAllocated')})` : ''}`]}
+                  />
                   <Bar dataKey="availableCapacityHours" radius={[4, 4, 0, 0]} fill="#64748b" />
                 </BarChart>
               </ResponsiveContainer>
@@ -146,12 +150,21 @@ export function ResourceProfile() {
                         <TR key={a.id} className="cursor-pointer" onClick={() => request && navigate(`/requests/${request.id}`)}>
                           <TD>
                             <p className="font-medium text-slate-800">{request?.title ?? a.request_id}</p>
-                            {request && <Badge tone={priorityTone[request.priority_level]}>{t(`priority.${request.priority_level}`)}</Badge>}
+                            {request &&
+                              (PROMINENT_PRIORITIES.includes(request.priority_level) ? (
+                                <Badge tone={priorityTone[request.priority_level]}>{t(`priority.${request.priority_level}`)}</Badge>
+                              ) : (
+                                <span className="text-xs text-slate-500">{t(`priority.${request.priority_level}`)}</span>
+                              ))}
                           </TD>
                           <TD className="capitalize">{a.assignment_role}</TD>
                           <TD>{a.allocation_percentage}%</TD>
                           <TD>
-                            <Badge tone="info">{a.status}</Badge>
+                            {a.status === 'active' ? (
+                              <span className="text-sm text-slate-500">{t('assignmentStatus.active')}</span>
+                            ) : (
+                              <Badge tone="info">{t(`assignmentStatus.${a.status}`)}</Badge>
+                            )}
                           </TD>
                         </TR>
                       )
@@ -193,7 +206,9 @@ export function ResourceProfile() {
             <CardContent>
               {currentUtilization && (
                 <>
-                  <p className="text-3xl font-semibold text-brand-700">{Math.round(currentUtilization.utilization * 100)}%</p>
+                  <p className={cn('text-3xl font-semibold', utilizationTextClass[currentUtilization.status])}>
+                    {Math.round(currentUtilization.utilization * 100)}%
+                  </p>
                   <Badge tone={utilizationTone[currentUtilization.status]} className="mt-1">
                     {t(`utilization.${currentUtilization.status}`)}
                   </Badge>

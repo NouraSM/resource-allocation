@@ -11,8 +11,11 @@ export type ScenarioBadgeKey = 'recommended' | 'bestSkillFit' | 'bestWorkloadBal
  * Assigns evidence-based badges to each scenario based on metrics the
  * engine already computed. A scenario can earn more than one badge if it
  * genuinely leads more than one metric; scenarios with no team members are
- * never badged. This does not change which scenario is "recommended"
- * (still whichever the engine ranked highest by teamScore) or any score.
+ * never badged. A badge (including "recommended") is only awarded when
+ * exactly one scenario uniquely holds the top value for that metric — a tie
+ * means no scenario gets it, rather than every tied scenario getting it.
+ * This does not change any score or which scenario the engine ranked
+ * highest; it only decides how that result gets labeled on screen.
  */
 export function deriveScenarioBadges(scenarios: TeamScenario[], recommendedScenarioNumber: number): Record<number, ScenarioBadgeKey[]> {
   const result: Record<number, ScenarioBadgeKey[]> = {}
@@ -23,9 +26,12 @@ export function deriveScenarioBadges(scenarios: TeamScenario[], recommendedScena
     return result
   }
 
-  const maxSkill = Math.max(...withMembers.map((s) => s.skillCoverageScore))
-  const maxBalance = Math.max(...withMembers.map((s) => s.loadBalanceScore))
-  const maxDeadline = Math.max(...withMembers.map((s) => s.deadlineFeasibilityScore))
+  const isUniqueMax = (values: number[], value: number) => value === Math.max(...values) && values.filter((v) => v === value).length === 1
+
+  const teamScores = withMembers.map((s) => s.teamScore)
+  const skillScores = withMembers.map((s) => s.skillCoverageScore)
+  const balanceScores = withMembers.map((s) => s.loadBalanceScore)
+  const deadlineScores = withMembers.map((s) => s.deadlineFeasibilityScore)
 
   for (const s of scenarios) {
     if (s.members.length === 0) {
@@ -33,13 +39,21 @@ export function deriveScenarioBadges(scenarios: TeamScenario[], recommendedScena
       continue
     }
     const badges: ScenarioBadgeKey[] = []
-    if (s.scenarioNumber === recommendedScenarioNumber) badges.push('recommended')
-    if (s.skillCoverageScore === maxSkill) badges.push('bestSkillFit')
-    if (s.loadBalanceScore === maxBalance) badges.push('bestWorkloadBalance')
-    if (s.deadlineFeasibilityScore === maxDeadline) badges.push('bestDeadlineFeasibility')
+    if (s.scenarioNumber === recommendedScenarioNumber && isUniqueMax(teamScores, s.teamScore)) badges.push('recommended')
+    if (isUniqueMax(skillScores, s.skillCoverageScore)) badges.push('bestSkillFit')
+    if (isUniqueMax(balanceScores, s.loadBalanceScore)) badges.push('bestWorkloadBalance')
+    if (isUniqueMax(deadlineScores, s.deadlineFeasibilityScore)) badges.push('bestDeadlineFeasibility')
     result[s.scenarioNumber] = badges
   }
   return result
+}
+
+/** True when two or more scenarios (with members) share the highest teamScore — no synthetic tie-breaker is introduced. */
+export function hasTiedTopScenarios(scenarios: TeamScenario[]): boolean {
+  const withMembers = scenarios.filter((s) => s.members.length > 0)
+  if (withMembers.length < 2) return false
+  const max = Math.max(...withMembers.map((s) => s.teamScore))
+  return withMembers.filter((s) => s.teamScore === max).length > 1
 }
 
 /** Requests already allocated/in-progress/at-risk get a "review" CTA instead of "generate". */
