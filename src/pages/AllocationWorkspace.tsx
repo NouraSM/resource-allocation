@@ -1,20 +1,26 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { useOrgData } from '@/hooks/useOrgData'
-import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
+import { ErrorState, LoadingState } from '@/components/ui/states'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Select } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { buildTeamScenarios } from '@/engine/teamBuilder'
 import { calculateCapacity, utilizationStatus } from '@/engine/capacity'
 import type { TeamMember, TeamScenario } from '@/engine/teamBuilder'
 import { priorityTone } from '@/lib/statusDisplay'
 import { formatDate } from '@/lib/utils'
+import { deriveScenarioBadges } from '@/lib/allocationDisplay'
 import { ScenarioCard } from '@/components/allocation/ScenarioCard'
 import { ScenarioCompareTable } from '@/components/allocation/ScenarioCompareTable'
+import { EligibleRequestsPanel } from '@/components/allocation/EligibleRequestsPanel'
+import { NoScenariosExplainer } from '@/components/allocation/NoScenariosExplainer'
+import { AllocationStepper } from '@/components/allocation/AllocationStepper'
+import type { AllocationStep } from '@/components/allocation/AllocationStepper'
 import { ApprovalDialog } from '@/components/allocation/ApprovalDialog'
 import type { ApprovalAction, ApprovalReasonCode } from '@/components/allocation/ApprovalDialog'
 import { ModifyTeamDialog } from '@/components/allocation/ModifyTeamDialog'
@@ -38,7 +44,7 @@ export function AllocationWorkspace() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (requestId) setSelectedRequestId(requestId)
+    setSelectedRequestId(requestId ?? '')
   }, [requestId])
 
   const today = useMemo(() => new Date(), [])
@@ -214,26 +220,26 @@ export function AllocationWorkspace() {
   if (!request) {
     return (
       <AppShell title={t('allocation.title')}>
-        <Card className="p-4">
-          <Select value={selectedRequestId} onChange={(e) => setSelectedRequestId(e.target.value)}>
-            <option value="">{t('common.search')}…</option>
-            {data.requests
-              .filter((r) => r.status !== 'completed' && r.status !== 'cancelled')
-              .map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.title}
-                </option>
-              ))}
-          </Select>
-        </Card>
+        <AllocationStepper current="request" />
+        <EligibleRequestsPanel data={data} onSelect={setSelectedRequestId} />
       </AppShell>
     )
   }
 
   const recommendedScenario = builderResult?.scenarios[0]?.scenarioNumber ?? 1
+  const badgesByScenario = builderResult ? deriveScenarioBadges(builderResult.scenarios, recommendedScenario) : {}
+  const blocked = !builderResult || builderResult.scenarios.every((s) => s.members.length === 0)
+  const currentStep: AllocationStep = blocked ? 'scenarios' : dialogAction || saving ? 'approve' : 'compare'
 
   return (
     <AppShell title={t('allocation.title')} subtitle={request.title}>
+      <div className="mb-3">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/allocation')}>
+          <ArrowLeft className="h-4 w-4 rtl:-scale-x-100" />
+          {t('allocation.backToQueue')}
+        </Button>
+      </div>
+      <AllocationStepper current={currentStep} />
       <div className="grid gap-4 lg:grid-cols-4">
         <Card className="h-fit lg:col-span-1">
           <CardHeader>
@@ -273,8 +279,13 @@ export function AllocationWorkspace() {
         </Card>
 
         <div className="space-y-4 lg:col-span-3">
-          {!builderResult || builderResult.scenarios.every((s) => s.members.length === 0) ? (
-            <EmptyState title={t('allocation.noScenarios')} body={t('allocation.noScenariosBody')} />
+          {blocked ? (
+            <NoScenariosExplainer
+              notFeasible={builderResult?.notFeasible ?? []}
+              evaluatedCount={builderResult?.candidates.length ?? 0}
+              onViewRequest={() => navigate(`/requests/${request.id}`)}
+              onViewResources={() => navigate('/resources')}
+            />
           ) : (
             <>
               <div className="grid gap-4 md:grid-cols-3">
@@ -282,7 +293,7 @@ export function AllocationWorkspace() {
                   <ScenarioCard
                     key={s.scenarioNumber}
                     scenario={s}
-                    isRecommended={s.scenarioNumber === recommendedScenario}
+                    badges={badgesByScenario[s.scenarioNumber] ?? []}
                     canManage={!!canManage}
                     onApprove={() => {
                       setActiveScenario(s)
@@ -299,7 +310,7 @@ export function AllocationWorkspace() {
                   />
                 ))}
               </div>
-              <ScenarioCompareTable scenarios={builderResult.scenarios} recommendedScenario={recommendedScenario} />
+              <ScenarioCompareTable scenarios={builderResult.scenarios} badgesByScenario={badgesByScenario} />
 
               {builderResult.notFeasible.length > 0 && (
                 <Card>

@@ -1,4 +1,4 @@
-import { Star, User } from 'lucide-react'
+import { Clock, Scale, Star, Target, User } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -6,18 +6,26 @@ import { ProgressBar } from '@/components/ui/progress'
 import { riskTone } from '@/lib/statusDisplay'
 import { useI18n } from '@/lib/i18n'
 import type { TeamScenario } from '@/engine/teamBuilder'
+import type { ScenarioBadgeKey } from '@/lib/allocationDisplay'
 import { cn } from '@/lib/utils'
+
+const BADGE_META: Record<ScenarioBadgeKey, { icon: typeof Star; labelKey: string }> = {
+  recommended: { icon: Star, labelKey: 'scenarioBadges.recommended' },
+  bestSkillFit: { icon: Target, labelKey: 'scenarioBadges.bestSkillFit' },
+  bestWorkloadBalance: { icon: Scale, labelKey: 'scenarioBadges.bestWorkloadBalance' },
+  bestDeadlineFeasibility: { icon: Clock, labelKey: 'scenarioBadges.bestDeadlineFeasibility' },
+}
 
 export function ScenarioCard({
   scenario,
-  isRecommended,
+  badges,
   onApprove,
   onModify,
   onWhatIf,
   canManage,
 }: {
   scenario: TeamScenario
-  isRecommended: boolean
+  badges: ScenarioBadgeKey[]
   onApprove: () => void
   onModify: () => void
   onWhatIf: () => void
@@ -25,22 +33,27 @@ export function ScenarioCard({
 }) {
   const { t } = useI18n()
   const scenarioLabelKey = { 1: 'allocation.scenarioA', 2: 'allocation.scenarioB', 3: 'allocation.scenarioC' } as const
+  const isRecommended = badges.includes('recommended')
 
   return (
     <Card className={cn('flex flex-col', isRecommended && 'border-brand-400 ring-1 ring-brand-200')}>
       <CardHeader className="flex-col items-start gap-2">
         <div className="flex w-full items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            {t(scenarioLabelKey[scenario.scenarioNumber])}
-            <span className="text-xs font-normal text-slate-400">· {scenario.strategyLabel}</span>
-          </CardTitle>
-          {isRecommended && (
-            <Badge tone="healthy">
-              <Star className="h-3 w-3" /> {t('allocation.recommended')}
-            </Badge>
-          )}
+          <CardTitle>{t(scenarioLabelKey[scenario.scenarioNumber])}</CardTitle>
+          <p className="text-2xl font-semibold text-brand-700">{scenario.teamScore.toFixed(0)}</p>
         </div>
-        <p className="text-2xl font-semibold text-brand-700">{scenario.teamScore.toFixed(0)}</p>
+        {badges.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {badges.map((key) => {
+              const { icon: Icon, labelKey } = BADGE_META[key]
+              return (
+                <Badge key={key} tone={key === 'recommended' ? 'healthy' : 'info'}>
+                  <Icon className="h-3 w-3" /> {t(labelKey)}
+                </Badge>
+              )
+            })}
+          </div>
+        )}
       </CardHeader>
       <CardContent className="flex-1 space-y-3">
         <div className="grid grid-cols-2 gap-2 text-xs">
