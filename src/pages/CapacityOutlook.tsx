@@ -64,42 +64,65 @@ export function CapacityOutlook() {
     return { rows, totalAvailableCapacity, totalDemand, pressureCount, criticalCount, deptRows }
   }, [data, today, horizonDays])
 
-  if (loading) return <AppShell title={t('capacityOutlook.title')} subtitle={t('capacityOutlook.subtitle')}><LoadingState /></AppShell>
-  if (error) return <AppShell title={t('capacityOutlook.title')} subtitle={t('capacityOutlook.subtitle')}><ErrorState message={error} onRetry={refetch} /></AppShell>
+  if (loading) return <AppShell title={t('capacityOutlook.title')}><LoadingState /></AppShell>
+  if (error) return <AppShell title={t('capacityOutlook.title')}><ErrorState message={error} onRetry={refetch} /></AppShell>
   if (!data || !computed) return <AppShell title={t('capacityOutlook.title')}><EmptyState title={t('requests.empty')} body={t('requests.emptyBody')} /></AppShell>
 
   const { rows, totalAvailableCapacity, totalDemand, pressureCount, criticalCount, deptRows } = computed
+  const horizonKey = HORIZONS.find((h) => h.days === horizonDays)?.key ?? 'horizon8'
+  const horizonLabel = t(`capacityOutlook.${horizonKey}`)
 
   return (
-    <AppShell title={t('capacityOutlook.title')} subtitle={t('capacityOutlook.subtitle')}>
+    <AppShell title={t('capacityOutlook.title')}>
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Tabs value={String(horizonDays)} onValueChange={(v) => setHorizonDays(Number(v))}>
-            <TabsList>
-              {HORIZONS.map((h) => (
-                <TabsTrigger key={h.days} value={String(h.days)}>
-                  {t(`capacityOutlook.${h.key}`)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-          <InfoTooltip
-            text={[t('capacityOutlook.methodologyDemand'), t('capacityOutlook.methodologyCapacity'), t('capacityOutlook.methodologyHorizon')].join(' ')}
-          />
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Tabs value={String(horizonDays)} onValueChange={(v) => setHorizonDays(Number(v))}>
+              <TabsList>
+                {HORIZONS.map((h) => (
+                  <TabsTrigger key={h.days} value={String(h.days)}>
+                    {t(`capacityOutlook.${h.key}`)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+            <InfoTooltip
+              text={[
+                t('capacityOutlook.methodologyBaseline'),
+                t('capacityOutlook.methodologyDemand'),
+                t('capacityOutlook.methodologyCapacity'),
+                t('capacityOutlook.methodologyHorizon'),
+              ].join(' ')}
+            />
+          </div>
+          <p className="text-xs text-slate-400">
+            {t('capacityOutlook.horizonContextPrefix')} {horizonLabel}
+          </p>
         </div>
 
         <section className="flex flex-wrap gap-x-14 gap-y-6">
           <HeroMetric label={t('capacityOutlook.capacityPressure')} value={pressureCount} tone={pressureCount > 0 ? 'attention' : 'calm'} size="lg" />
           <div className="flex flex-wrap gap-x-10 gap-y-4">
             <HeroMetric label={t('capacityOutlook.criticalGaps')} value={criticalCount} tone={criticalCount > 0 ? 'critical' : 'calm'} size="sm" />
-            <HeroMetric label={t('capacityOutlook.upcomingDemand')} value={`${Math.round(totalDemand)}${t('capacityOutlook.estHours')}`} tone="calm" size="sm" />
-            <HeroMetric label={t('capacityOutlook.availableCapacity')} value={`${Math.round(totalAvailableCapacity)}${t('common.hours')}`} tone="calm" size="sm" />
+            <HeroMetric
+              label={`${t('capacityOutlook.upcomingDemand')} — ${horizonLabel}`}
+              value={`${Math.round(totalDemand)}${t('capacityOutlook.estHours')}`}
+              tone="calm"
+              size="sm"
+            />
+            <HeroMetric
+              label={`${t('capacityOutlook.availableCapacity')} — ${horizonLabel}`}
+              value={`${Math.round(totalAvailableCapacity)}${t('common.hours')}`}
+              tone="calm"
+              size="sm"
+            />
           </div>
         </section>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="items-center gap-2">
             <CardTitle>{t('capacityOutlook.tableCapability')}</CardTitle>
+            <InfoTooltip text={t('capacityOutlook.tableCapacityHint')} />
           </CardHeader>
           {rows.length === 0 ? (
             <CardContent>

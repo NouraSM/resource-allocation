@@ -1,6 +1,7 @@
 import { TrendingDown, TrendingUp } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import type { PortfolioImpact } from '@/engine/portfolioImpact'
+import { PORTFOLIO_IMPACT_HORIZON_DAYS } from '@/engine/portfolioImpact'
 import { cn } from '@/lib/utils'
 
 /**
@@ -21,7 +22,9 @@ export function PortfolioImpactPanel({ impact }: { impact: PortfolioImpact | nul
 
   return (
     <div className="space-y-1.5 rounded-md bg-slate-50 p-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t('portfolioImpact.title')}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+        {t('portfolioImpact.title')} <span className="font-normal normal-case text-slate-400">— {PORTFOLIO_IMPACT_HORIZON_DAYS}-day horizon</span>
+      </p>
       <ImpactRow
         label={t('portfolioImpact.overloadedResources')}
         before={impact.overloadedResourcesBefore}

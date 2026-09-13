@@ -13,15 +13,8 @@ import { LoadingState } from '@/components/ui/states'
 import { analyzeRequestWithAi } from '@/lib/ai'
 import type { AiSuggestedSkill } from '@/lib/ai'
 import { calculateUrgencyScore } from '@/engine/urgency'
-import {
-  DEPENDENCY_SCORE,
-  PUBLIC_IMPACT_SCORE,
-  STRATEGIC_IMPORTANCE_SCORE,
-  YES_NO_SCORE,
-  calculatePriorityScore,
-  priorityLevelFromScore,
-} from '@/engine/priority'
-import type { DependencyOption, PublicImpactOption, StrategicImportanceOption, YesNoOption } from '@/engine/priority'
+import { DEPENDENCY_SCORE, YES_NO_SCORE, calculatePriorityScore, priorityLevelFromScore } from '@/engine/priority'
+import type { DependencyOption, YesNoOption } from '@/engine/priority'
 import { priorityTone } from '@/lib/statusDisplay'
 import { SENIOR_ENTITIES } from '@/lib/entityDisplay'
 import { formatNumber } from '@/lib/utils'
@@ -42,7 +35,6 @@ export function NewRequest() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [entity, setEntity] = useState('')
-  const [requester, setRequester] = useState('')
   const [receivedDate, setReceivedDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [deadline, setDeadline] = useState('')
 
@@ -56,10 +48,7 @@ export function NewRequest() {
   const [skillRows, setSkillRows] = useState<SkillRow[]>([])
   const [addSkillId, setAddSkillId] = useState('')
 
-  const [strategic, setStrategic] = useState<StrategicImportanceOption>('medium')
-  const [execSponsored, setExecSponsored] = useState<YesNoOption>('no')
   const [regulatory, setRegulatory] = useState<YesNoOption>('no')
-  const [publicImpact, setPublicImpact] = useState<PublicImpactOption>('low')
   const [dependency, setDependency] = useState<DependencyOption>('none')
 
   const [saving, setSaving] = useState(false)
@@ -74,13 +63,10 @@ export function NewRequest() {
     () =>
       calculatePriorityScore({
         urgencyScore,
-        strategicImportance: STRATEGIC_IMPORTANCE_SCORE[strategic],
-        executiveSponsorship: YES_NO_SCORE[execSponsored],
         regulatoryImportance: YES_NO_SCORE[regulatory],
-        publicImpact: PUBLIC_IMPACT_SCORE[publicImpact],
         dependencyImpact: DEPENDENCY_SCORE[dependency],
       }),
-    [urgencyScore, strategic, execSponsored, regulatory, publicImpact, dependency],
+    [urgencyScore, regulatory, dependency],
   )
   const priorityLevel = priorityLevelFromScore(priorityScore)
 
@@ -114,7 +100,7 @@ export function NewRequest() {
     setAddSkillId('')
   }
 
-  const canSave = title.trim() && entity.trim() && requester.trim() && deadline && !saving
+  const canSave = title.trim() && entity.trim() && deadline && !saving
 
   async function handleSave() {
     if (!profile || !data || !canSave) return
@@ -128,14 +114,14 @@ export function NewRequest() {
         title: title.trim(),
         description: description.trim(),
         requesting_entity: entity.trim(),
-        requester_name: requester.trim(),
+        // requester_name (an individual contact name) is no longer collected
+        // in the UI; kept as an empty string to satisfy the NOT NULL
+        // constraint without a schema change.
+        requester_name: '',
         request_type: requestType || null,
         received_date: receivedDate,
         requested_deadline: deadline,
-        strategic_importance: STRATEGIC_IMPORTANCE_SCORE[strategic],
-        executive_sponsorship: YES_NO_SCORE[execSponsored],
         regulatory_importance: YES_NO_SCORE[regulatory],
-        public_impact: PUBLIC_IMPACT_SCORE[publicImpact],
         dependency_impact: DEPENDENCY_SCORE[dependency],
         urgency_score: urgencyScore,
         priority_score: priorityScore,
@@ -216,10 +202,6 @@ export function NewRequest() {
                       </option>
                     ))}
                   </Select>
-                </div>
-                <div>
-                  <Label htmlFor="requester">{t('newRequest.requesterLabel')}</Label>
-                  <Input id="requester" value={requester} onChange={(e) => setRequester(e.target.value)} />
                 </div>
                 <div>
                   <Label htmlFor="received">{t('newRequest.receivedDateLabel')}</Label>
@@ -350,37 +332,10 @@ export function NewRequest() {
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
               <div>
-                <Label>{t('newRequest.strategicImportance')}</Label>
-                <Select value={strategic} onChange={(e) => setStrategic(e.target.value as StrategicImportanceOption)}>
-                  {(['low', 'medium', 'high', 'critical'] as const).map((v) => (
-                    <option key={v} value={v}>
-                      {t(`priority.${v}`)}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <Label>{t('newRequest.executiveSponsored')}</Label>
-                <Select value={execSponsored} onChange={(e) => setExecSponsored(e.target.value as YesNoOption)}>
-                  <option value="no">{t('common.no')}</option>
-                  <option value="yes">{t('common.yes')}</option>
-                </Select>
-              </div>
-              <div>
                 <Label>{t('newRequest.regulatoryDeadline')}</Label>
                 <Select value={regulatory} onChange={(e) => setRegulatory(e.target.value as YesNoOption)}>
                   <option value="no">{t('common.no')}</option>
                   <option value="yes">{t('common.yes')}</option>
-                </Select>
-              </div>
-              <div>
-                <Label>{t('newRequest.publicImpact')}</Label>
-                <Select value={publicImpact} onChange={(e) => setPublicImpact(e.target.value as PublicImpactOption)}>
-                  {(['low', 'medium', 'high'] as const).map((v) => (
-                    <option key={v} value={v}>
-                      {t(`priority.${v}`)}
-                    </option>
-                  ))}
                 </Select>
               </div>
               <div>

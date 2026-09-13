@@ -7,13 +7,13 @@ import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
 import { useOrgData } from '@/hooks/useOrgData'
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
-import { HeroMetric, StatInline } from '@/components/dashboard/KpiCard'
+import { KpiStatCard, StatInline } from '@/components/dashboard/KpiCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { commandCenterKpis, computeResourceUtilizations, departmentCapacity, priorityBacklog, upcomingDeadlines } from '@/engine/dashboardMetrics'
 import { deriveExecutiveDecisions } from '@/engine/executiveDecisions'
 import type { ExecutiveDecisionType } from '@/engine/executiveDecisions'
-import { formatDate, formatPercent } from '@/lib/utils'
+import { formatDate, formatPercent, cn } from '@/lib/utils'
 import { priorityTone, PROMINENT_PRIORITIES } from '@/lib/statusDisplay'
 
 const DECISION_ICON: Record<ExecutiveDecisionType, LucideIcon> = {
@@ -25,6 +25,21 @@ const DECISION_LABEL_KEY: Record<ExecutiveDecisionType, string> = {
   capacity_pressure: 'commandCenter.decisionTypeCapacityPressure',
   allocation_decision: 'commandCenter.decisionTypeAllocationDecision',
   workload_pressure: 'commandCenter.decisionTypeWorkloadPressure',
+}
+// Restrained semantic mapping by decision type. This is safe as a type-based
+// mapping (not a hardcoded severity) because deriveExecutiveDecisions only
+// ever emits each type when its own real, data-verified condition already
+// holds — e.g. workload_pressure only fires for persistent overload — so the
+// type itself already reflects a data-checked severity band, not an assumed one.
+const DECISION_BADGE_TONE: Record<ExecutiveDecisionType, 'attention' | 'info' | 'critical'> = {
+  capacity_pressure: 'attention',
+  allocation_decision: 'info',
+  workload_pressure: 'critical',
+}
+const DECISION_ICON_CLASSES: Record<ExecutiveDecisionType, string> = {
+  capacity_pressure: 'bg-status-attention-bg text-status-attention',
+  allocation_decision: 'bg-status-info-bg text-status-info',
+  workload_pressure: 'bg-status-critical-bg text-status-critical',
 }
 
 export function CommandCenter() {
@@ -98,12 +113,11 @@ export function CommandCenter() {
   const overloadThreshold = data.orgSettings.overloadThreshold
   const highlightDept = deptCapacity[0] && deptCapacity[0].avgUtilization >= overloadThreshold - 0.05 ? deptCapacity[0].department : null
 
-  // Critical Requests always anchors the page — position is stable regardless
-  // of value, so the layout never reshuffles itself as data changes. Only its
-  // color reacts (red when >0, calm gray at 0). The other three always render
-  // in the same fixed order, visually secondary but still legible.
-  const hero = { label: t('commandCenter.criticalRequests'), value: kpis.criticalRequests, tone: kpis.criticalRequests > 0 ? ('critical' as const) : ('calm' as const) }
-  const secondaryMetrics = [
+  // Four peer executive indicators — same card, same number size/weight, same
+  // label size, always in the same fixed order so the layout never reshuffles
+  // as data changes. Only the accent/number color reacts to the value.
+  const kpiCards = [
+    { key: 'critical', label: t('commandCenter.criticalRequests'), value: kpis.criticalRequests, tone: kpis.criticalRequests > 0 ? ('critical' as const) : ('calm' as const) },
     { key: 'atRisk', label: t('commandCenter.atRiskRequests'), value: kpis.atRiskRequests, tone: kpis.atRiskRequests > 0 ? ('attention' as const) : ('calm' as const) },
     { key: 'unallocated', label: t('commandCenter.unallocatedRequests'), value: kpis.unallocatedRequests, tone: kpis.unallocatedRequests > 0 ? ('attention' as const) : ('calm' as const) },
     { key: 'overloaded', label: t('commandCenter.overloadedResources'), value: kpis.overloadedResources, tone: kpis.overloadedResources > 0 ? ('critical' as const) : ('calm' as const) },
@@ -112,14 +126,11 @@ export function CommandCenter() {
   return (
     <AppShell title={t('commandCenter.title')} subtitle={t('commandCenter.subtitle')}>
       <div className="space-y-10">
-        {/* Hero: the one number that answers "what needs attention now" */}
-        <section className="flex flex-wrap items-end gap-x-14 gap-y-6">
-          <HeroMetric label={hero.label} value={hero.value} tone={hero.tone} size="lg" />
-          <div className="flex flex-wrap gap-x-10 gap-y-4">
-            {secondaryMetrics.map((m) => (
-              <HeroMetric key={m.key} label={m.label} value={m.value} tone={m.tone} size="sm" />
-            ))}
-          </div>
+        {/* Four peer KPIs answering "what needs attention now" — equal weight, no single dominant number */}
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {kpiCards.map((k) => (
+            <KpiStatCard key={k.key} label={k.label} value={k.value} tone={k.tone} />
+          ))}
         </section>
 
         {/* Supporting context — deliberately quieter than the hero row above */}
@@ -149,11 +160,11 @@ export function CommandCenter() {
                     onClick={() => navigate(decision.ctaPath)}
                     className="flex w-full items-start gap-3 rounded-[var(--radius-control)] bg-slate-50 p-3.5 text-start transition-colors hover:bg-slate-100"
                   >
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-slate-500">
+                    <div className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', DECISION_ICON_CLASSES[decision.type])}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <Badge tone="neutral" className="mb-1.5 font-normal normal-case text-slate-500">
+                      <Badge tone={DECISION_BADGE_TONE[decision.type]} className="mb-1.5 font-normal normal-case">
                         {t(DECISION_LABEL_KEY[decision.type])}
                       </Badge>
                       <p className="text-sm font-medium text-slate-800">{decision.headline}</p>

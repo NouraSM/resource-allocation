@@ -212,6 +212,7 @@ export function ResourceProfile() {
                   <Badge tone={utilizationTone[currentUtilization.status]} className="mt-1">
                     {t(`utilization.${currentUtilization.status}`)}
                   </Badge>
+                  <p className="mt-2 text-xs text-slate-400">{t('resourceProfile.currentAllocationHint')}</p>
                 </>
               )}
               <p className="mt-3 rounded-md bg-slate-50 p-2 text-xs text-slate-600">

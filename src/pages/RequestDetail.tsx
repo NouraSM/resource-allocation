@@ -21,10 +21,7 @@ import { logAudit } from '@/lib/audit'
 
 const PRIORITY_FACTOR_LABEL_KEYS: Record<keyof PriorityInputs, string> = {
   urgencyScore: 'requestDetail.urgency',
-  strategicImportance: 'newRequest.strategicImportance',
-  executiveSponsorship: 'newRequest.executiveSponsored',
   regulatoryImportance: 'newRequest.regulatoryDeadline',
-  publicImpact: 'newRequest.publicImpact',
   dependencyImpact: 'newRequest.dependencies',
 }
 
@@ -65,10 +62,7 @@ export function RequestDetail() {
 
   const breakdown = priorityBreakdown({
     urgencyScore: request.urgency_override ?? request.urgency_score,
-    strategicImportance: request.strategic_importance,
-    executiveSponsorship: request.executive_sponsorship,
     regulatoryImportance: request.regulatory_importance,
-    publicImpact: request.public_impact,
     dependencyImpact: request.dependency_impact,
   })
 
@@ -112,10 +106,6 @@ export function RequestDetail() {
                 <div>
                   <p className="font-medium text-slate-400">{t('requests.table.entity')}</p>
                   <p className="text-slate-700">{request.requesting_entity}</p>
-                </div>
-                <div>
-                  <p className="font-medium text-slate-400">{t('newRequest.requesterLabel')}</p>
-                  <p className="text-slate-700">{request.requester_name}</p>
                 </div>
                 <div>
                   <p className="font-medium text-slate-400">{t('newRequest.requestType')}</p>

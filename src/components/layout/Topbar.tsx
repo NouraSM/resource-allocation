@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 
 export function Topbar({ title, subtitle }: { title?: string; subtitle?: string }) {
-  const { locale, setLocale, t } = useI18n()
+  const { t } = useI18n()
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
 
@@ -19,11 +19,14 @@ export function Topbar({ title, subtitle }: { title?: string; subtitle?: string 
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocale(locale === 'en' ? 'ar' : 'en')}
-          aria-label="Toggle language"
+          disabled
+          title={t('common.arabicComingSoon')}
+          aria-label={t('common.arabicComingSoon')}
+          className="text-slate-400"
         >
           <Globe className="h-4 w-4" />
-          {locale === 'en' ? 'العربية' : 'English'}
+          العربية
+          <span className="text-[10px] font-normal text-slate-400">({t('common.comingSoon')})</span>
         </Button>
         {profile && (
           <div className="hidden items-center gap-2 rounded-[var(--radius-control)] bg-slate-100/70 px-2.5 py-1.5 sm:flex">

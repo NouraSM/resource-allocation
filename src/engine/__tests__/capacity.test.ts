@@ -114,4 +114,27 @@ describe('capacity engine', () => {
     expect(calculateCapacityScore(150, 100)).toBe(100)
     expect(calculateCapacityScore(0, 100)).toBe(0)
   })
+
+  describe('standard 8h/day, 40h/week baseline over the Capacity Outlook horizons', () => {
+    it.each([
+      [28, 160], // 4 weeks
+      [56, 320], // 8 weeks
+      [84, 480], // 12 weeks
+    ])('gives a full-time resource with no commitments %s days -> %s gross hours', (days, expectedHours) => {
+      const rangeEnd = new Date(RANGE_START)
+      rangeEnd.setDate(rangeEnd.getDate() + days)
+      expect(calculateGrossCapacity(resource, org, RANGE_START, rangeEnd)).toBe(expectedHours)
+    })
+
+    it('reduces available capacity below the flat gross baseline once existing commitments are counted', () => {
+      const assignments: EngineAssignment[] = [
+        { id: 'a1', resourceId: 'r1', requestId: 'req1', allocationPercentage: 50, allocatedHours: 80, startDate: '2026-09-06', endDate: '2026-10-03', status: 'active' },
+      ]
+      const rangeEnd = new Date(RANGE_START)
+      rangeEnd.setDate(rangeEnd.getDate() + 28)
+      const result = calculateCapacity({ resource, org, assignments, availability: [], rangeStart: RANGE_START, rangeEnd })
+      expect(result.grossCapacityHours).toBe(160)
+      expect(result.availableCapacityHours).toBeLessThan(160)
+    })
+  })
 })

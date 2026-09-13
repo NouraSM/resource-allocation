@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { Card } from '@/components/ui/card'
 
 type HeroTone = 'calm' | 'attention' | 'critical' | 'brand'
 type HeroSize = 'lg' | 'sm'
@@ -35,6 +36,38 @@ export function HeroMetric({
       <p className={cn('font-semibold tabular-nums tracking-tight', HERO_SIZE_CLASSES[size], HERO_TONE_CLASSES[tone])}>{value}</p>
       <p className={cn('mt-1 font-medium text-slate-500', size === 'lg' ? 'text-sm' : 'text-xs')}>{label}</p>
     </div>
+  )
+}
+
+type KpiStatTone = 'calm' | 'attention' | 'critical'
+
+const KPI_STAT_NUMBER_CLASSES: Record<KpiStatTone, string> = {
+  calm: 'text-slate-900',
+  attention: 'text-status-attention',
+  critical: 'text-status-critical',
+}
+
+// A restrained left-edge accent only — never a full colored background —
+// so four peer KPIs stay calm even when one is flagged.
+const KPI_STAT_ACCENT_CLASSES: Record<KpiStatTone, string> = {
+  calm: 'border-s-transparent',
+  attention: 'border-s-status-attention',
+  critical: 'border-s-status-critical',
+}
+
+/**
+ * One of a row of equal-weight executive KPIs — same card, same number
+ * size/weight, same label size, differing only by a subtle left accent and
+ * number color when a metric needs attention. Used where several KPIs must
+ * read as peers rather than one dominant hero metric (see HeroMetric for
+ * that layout instead).
+ */
+export function KpiStatCard({ label, value, tone = 'calm' }: { label: string; value: string | number; tone?: KpiStatTone }) {
+  return (
+    <Card className={cn('border-s-[3px] p-5', KPI_STAT_ACCENT_CLASSES[tone])}>
+      <p className={cn('text-[34px] font-semibold leading-none tabular-nums', KPI_STAT_NUMBER_CLASSES[tone])}>{value}</p>
+      <p className="mt-2 text-sm font-medium text-slate-500">{label}</p>
+    </Card>
   )
 }
 

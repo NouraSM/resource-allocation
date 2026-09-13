@@ -1,13 +1,6 @@
 import { calculateUrgencyScore } from '@/engine/urgency'
-import {
-  DEPENDENCY_SCORE,
-  PUBLIC_IMPACT_SCORE,
-  STRATEGIC_IMPORTANCE_SCORE,
-  YES_NO_SCORE,
-  calculatePriorityScore,
-  priorityLevelFromScore,
-} from '@/engine/priority'
-import type { DependencyOption, PublicImpactOption, StrategicImportanceOption, YesNoOption } from '@/engine/priority'
+import { DEPENDENCY_SCORE, YES_NO_SCORE, calculatePriorityScore, priorityLevelFromScore } from '@/engine/priority'
+import type { DependencyOption, YesNoOption } from '@/engine/priority'
 import type { OrgData } from '@/hooks/useOrgData'
 
 export interface ImportRowResult {
@@ -128,9 +121,7 @@ export const resourceSkillsTemplate: ImportTemplate = {
     }),
 }
 
-const STRATEGIC_OPTIONS = Object.keys(STRATEGIC_IMPORTANCE_SCORE) as StrategicImportanceOption[]
 const YES_NO_OPTIONS = Object.keys(YES_NO_SCORE) as YesNoOption[]
-const PUBLIC_OPTIONS = Object.keys(PUBLIC_IMPACT_SCORE) as PublicImpactOption[]
 const DEPENDENCY_OPTIONS = Object.keys(DEPENDENCY_SCORE) as DependencyOption[]
 
 export const workRequestsTemplate: ImportTemplate = {
@@ -139,13 +130,9 @@ export const workRequestsTemplate: ImportTemplate = {
   columns: [
     'title',
     'requesting_entity',
-    'requester_name',
     'received_date',
     'requested_deadline',
-    'strategic_importance',
-    'executive_sponsored',
     'regulatory_deadline',
-    'public_impact',
     'dependencies',
     'estimated_effort_hours',
     'complexity',
@@ -156,18 +143,11 @@ export const workRequestsTemplate: ImportTemplate = {
       const errors: string[] = []
       const title = requireField(raw, 'title', errors)
       const entity = requireField(raw, 'requesting_entity', errors)
-      const requester = requireField(raw, 'requester_name', errors)
       const deadline = requireField(raw, 'requested_deadline', errors)
       if (deadline && Number.isNaN(new Date(deadline).getTime())) errors.push('requested_deadline must be a valid date (YYYY-MM-DD)')
 
-      const strategic = raw.strategic_importance?.trim().toLowerCase() as StrategicImportanceOption
-      if (!STRATEGIC_OPTIONS.includes(strategic)) errors.push(`strategic_importance must be one of: ${STRATEGIC_OPTIONS.join(', ')}`)
-      const execSponsored = raw.executive_sponsored?.trim().toLowerCase() as YesNoOption
-      if (!YES_NO_OPTIONS.includes(execSponsored)) errors.push(`executive_sponsored must be one of: ${YES_NO_OPTIONS.join(', ')}`)
       const regulatory = raw.regulatory_deadline?.trim().toLowerCase() as YesNoOption
       if (!YES_NO_OPTIONS.includes(regulatory)) errors.push(`regulatory_deadline must be one of: ${YES_NO_OPTIONS.join(', ')}`)
-      const publicImpact = raw.public_impact?.trim().toLowerCase() as PublicImpactOption
-      if (!PUBLIC_OPTIONS.includes(publicImpact)) errors.push(`public_impact must be one of: ${PUBLIC_OPTIONS.join(', ')}`)
       const dependencies = raw.dependencies?.trim().toLowerCase() as DependencyOption
       if (!DEPENDENCY_OPTIONS.includes(dependencies)) errors.push(`dependencies must be one of: ${DEPENDENCY_OPTIONS.join(', ')}`)
       const effort = num(raw.estimated_effort_hours ?? '')
@@ -179,10 +159,7 @@ export const workRequestsTemplate: ImportTemplate = {
       const urgencyScore = calculateUrgencyScore(today, new Date(deadline), org.orgSettings.workingDays)
       const priorityScore = calculatePriorityScore({
         urgencyScore,
-        strategicImportance: STRATEGIC_IMPORTANCE_SCORE[strategic],
-        executiveSponsorship: YES_NO_SCORE[execSponsored],
         regulatoryImportance: YES_NO_SCORE[regulatory],
-        publicImpact: PUBLIC_IMPACT_SCORE[publicImpact],
         dependencyImpact: DEPENDENCY_SCORE[dependencies],
       })
 
@@ -195,13 +172,13 @@ export const workRequestsTemplate: ImportTemplate = {
           title,
           description: raw.description || '',
           requesting_entity: entity,
-          requester_name: requester,
+          // requester_name (an individual contact name) is no longer collected
+          // via import; kept as an empty string to satisfy the NOT NULL
+          // constraint without a schema change.
+          requester_name: '',
           received_date: raw.received_date || today.toISOString().slice(0, 10),
           requested_deadline: deadline,
-          strategic_importance: STRATEGIC_IMPORTANCE_SCORE[strategic],
-          executive_sponsorship: YES_NO_SCORE[execSponsored],
           regulatory_importance: YES_NO_SCORE[regulatory],
-          public_impact: PUBLIC_IMPACT_SCORE[publicImpact],
           dependency_impact: DEPENDENCY_SCORE[dependencies],
           urgency_score: urgencyScore,
           priority_score: priorityScore,

@@ -90,11 +90,6 @@ export function Portfolio() {
     return acc
   }, { new: [], ready_for_allocation: [], allocated: [], in_progress: [], at_risk: [], completed: [] })
 
-  const sortedByDeadline = [...filtered].sort((a, b) => new Date(a.requested_deadline).getTime() - new Date(b.requested_deadline).getTime())
-  const minDate = sortedByDeadline.length ? new Date(sortedByDeadline[0].requested_deadline) : new Date()
-  const maxDate = sortedByDeadline.length ? new Date(sortedByDeadline[sortedByDeadline.length - 1].requested_deadline) : new Date()
-  const totalSpan = Math.max(1, maxDate.getTime() - minDate.getTime())
-
   return (
     <AppShell title={t('portfolio.title')}>
       <div className="space-y-4">
@@ -131,7 +126,6 @@ export function Portfolio() {
         <Tabs defaultValue="table">
           <TabsList>
             <TabsTrigger value="table">{t('portfolio.table')}</TabsTrigger>
-            <TabsTrigger value="timeline">{t('portfolio.timeline')}</TabsTrigger>
             <TabsTrigger value="kanban">{t('portfolio.kanban')}</TabsTrigger>
           </TabsList>
 
@@ -173,29 +167,6 @@ export function Portfolio() {
                   ))}
                 </TBody>
               </Table>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="timeline" className="mt-3">
-            <Card className="space-y-3 p-4">
-              {sortedByDeadline.map((r) => {
-                const pct = ((new Date(r.requested_deadline).getTime() - minDate.getTime()) / totalSpan) * 100
-                return (
-                  <button key={r.id} onClick={() => navigate(`/requests/${r.id}`)} className="block w-full text-start">
-                    <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="font-medium text-slate-700">{r.title}</span>
-                      <span className="text-slate-400">{formatDate(r.requested_deadline, locale)}</span>
-                    </div>
-                    <div className="relative h-2 rounded-full bg-slate-100">
-                      <div
-                        className={`absolute top-0 h-2 w-2 rounded-full ${r.priority_level === 'critical' ? 'bg-status-critical' : r.priority_level === 'high' ? 'bg-status-attention' : 'bg-brand-500'}`}
-                        style={{ left: `calc(${Math.min(98, Math.max(0, pct))}% - 4px)` }}
-                      />
-                    </div>
-                  </button>
-                )
-              })}
-              {sortedByDeadline.length === 0 && <p className="text-sm text-slate-400">{t('common.noData')}</p>}
             </Card>
           </TabsContent>
 

@@ -45,6 +45,7 @@ const en = {
     finish: 'Finish',
     skip: 'Skip',
     comingSoon: 'Coming Soon',
+    arabicComingSoon: 'Arabic — Coming soon',
     signOut: 'Sign out',
     signIn: 'Sign in',
     name: 'Name',
@@ -130,7 +131,6 @@ const en = {
   },
   capacityOutlook: {
     title: 'Capacity Outlook',
-    subtitle: 'Where organizational delivery capability is becoming constrained',
     horizon4: '4 weeks',
     horizon8: '8 weeks',
     horizon12: '12 weeks',
@@ -141,18 +141,22 @@ const en = {
     criticalGaps: 'Critical Capability Gaps',
     tableCapability: 'Capability',
     tableDemand: 'Estimated Demand',
-    tableCapacity: 'Available Capacity',
+    tableCapacity: 'Qualified Capacity Pool',
+    tableCapacityHint: 'Pools are non-additive: the same resource can qualify for — and appear in — more than one capability, so these figures should never be summed across rows as if they were independent capacity.',
     tablePressure: 'Pressure',
     tableStatus: 'Status',
     tableRequests: 'Requests',
     tableQualified: 'Qualified Resources',
     tableSenior: 'Senior',
     noPressure: 'No capabilities are under meaningful pressure at this horizon.',
+    horizonContextPrefix: 'Figures below reflect the selected horizon:',
     methodologyTitle: 'How this is calculated',
+    methodologyBaseline:
+      'Working capacity is based on a standard 8-hour day / 40-hour week (or each resource\'s own configured weekly hours), evaluated over the selected 4/8/12-week horizon.',
     methodologyDemand:
       "Estimated demand distributes each request's effort across its required capabilities in proportion to each capability's recorded importance for that request — not the full request effort repeated per capability. This is an estimate, not measured per-skill effort.",
     methodologyCapacity:
-      'Available capacity sums the standard capacity engine across every active resource holding that capability. A resource holding multiple capabilities is counted independently in each — capacity figures are not additive across rows.',
+      "Each capability's Qualified Capacity Pool sums the standard capacity engine — gross working hours minus existing commitments and leave — across every active resource holding that capability. A resource holding multiple capabilities appears independently in each pool, so pool figures are NOT additive across rows: the same person's hours can appear in more than one capability's pool, and summing pools would overstate real organizational capacity. The org-wide Available Capacity figure above avoids this by counting every resource exactly once, regardless of how many capabilities they hold.",
     methodologyHorizon: "The horizon is the forward-looking window within which a request's deadline must fall to count as in-scope demand.",
     departmentSupply: 'Workforce Capacity by Department',
     departmentSupplyHint:
@@ -187,7 +191,6 @@ const en = {
     descriptionLabel: 'Description',
     entityLabel: 'Requesting Entity',
     selectEntity: 'Select requesting entity…',
-    requesterLabel: 'Requester Name',
     receivedDateLabel: 'Received Date',
     deadlineLabel: 'Requested Deadline',
     analyzeButton: 'Analyze with Copilot',
@@ -200,10 +203,7 @@ const en = {
     estimatedEffort: 'Estimated Effort (hours)',
     skillsNeeded: 'Required Skills',
     addSkill: 'Add Skill',
-    strategicImportance: 'Strategic Importance',
-    executiveSponsored: 'Executive Sponsored',
     regulatoryDeadline: 'Regulatory Deadline',
-    publicImpact: 'Public Impact',
     dependencies: 'Dependencies',
     calculatedPriority: 'Calculated Priority Score',
     dependenciesNone: 'None',
@@ -373,6 +373,7 @@ const en = {
   },
   resourceProfile: {
     currentAllocation: 'Current Allocation',
+    currentAllocationHint: 'Based on the next 2 weeks.',
     upcomingCapacity: 'Upcoming Capacity by Week',
     upcomingCapacityHint: 'Negative values mean the resource is over-allocated beyond available hours that week.',
     overAllocated: 'over-allocated',
@@ -392,7 +393,6 @@ const en = {
   portfolio: {
     title: 'Portfolio',
     table: 'Table',
-    timeline: 'Timeline',
     kanban: 'Kanban',
   },
   copilot: {
