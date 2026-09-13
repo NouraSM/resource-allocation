@@ -4,9 +4,12 @@
 // phrase the explanation, never to compute or invent a number.
 
 import type { OrgData } from '@/hooks/useOrgData'
-import { computeResourceUtilizations, deriveRequestRiskSeverities, priorityBacklog } from '@/engine/dashboardMetrics'
+import { computeResourceUtilizations, deriveRequestRiskSeverities, isActiveRequest, priorityBacklog } from '@/engine/dashboardMetrics'
 import { calculateDeliveryRisk, riskSeverityFromScore } from '@/engine/risk'
 import { calculateCapacityScore } from '@/engine/capacity'
+import { calculateCapabilityPressure } from '@/engine/capacityOutlook'
+import { buildTeamScenarios, evaluateCandidates } from '@/engine/teamBuilder'
+import { calculatePortfolioImpact } from '@/engine/portfolioImpact'
 
 export interface CopilotAction {
   label: string
@@ -147,11 +150,122 @@ function whyHighRisk(data: OrgData, question: string): CopilotAnswer {
   return { text, actions: [{ label: request.title, path: `/requests/${request.id}` }], contextForAi: { title: request.title, risk } }
 }
 
+function capacityPressureAnswer(data: OrgData): CopilotAnswer {
+  const today = new Date()
+  const rows = calculateCapabilityPressure({
+    requests: data.requests,
+    requestSkills: data.requestSkills,
+    skills: data.skills,
+    resources: data.engineResources,
+    assignments: data.engineAssignments,
+    availability: data.engineAvailability,
+    org: data.orgSettings,
+    today,
+    horizonDays: 56,
+  }).filter((r) => r.requestCount > 0 && (r.status === 'overloaded' || r.status === 'critical'))
+
+  if (rows.length === 0) {
+    return { text: 'No capability is currently under meaningful pressure over the next 8 weeks.', actions: [{ label: 'Capacity Outlook', path: '/capacity-outlook' }], contextForAi: { rows: [] } }
+  }
+  const top = rows.slice(0, 3)
+  const text = `The most constrained capabilities over the next 8 weeks are: ${top
+    .map((r) => `${r.skillName} (${r.requestCount} upcoming request${r.requestCount === 1 ? '' : 's'}, ${r.qualifiedResourceCount} qualified resource${r.qualifiedResourceCount === 1 ? '' : 's'})`)
+    .join('; ')}.`
+  return { text, actions: [{ label: 'Capacity Outlook', path: '/capacity-outlook' }], contextForAi: { rows: top } }
+}
+
+function criticalRequestsNoFeasible(data: OrgData): CopilotAnswer {
+  const today = new Date()
+  const candidates = data.requests.filter((r) => (r.priority_level === 'critical' || r.priority_level === 'high') && isActiveRequest(r.status))
+
+  const noFeasible = candidates.filter((r) => {
+    const requiredSkills = data.requestSkills
+      .filter((rs) => rs.request_id === r.id)
+      .map((rs) => ({ skillId: rs.skill_id, requiredLevel: rs.required_level, importanceWeight: rs.importance_weight, mandatory: rs.mandatory }))
+    const evaluations = evaluateCandidates({
+      request: { id: r.id, estimatedEffortHours: r.estimated_effort_hours, requestedDeadline: r.requested_deadline, priorityLevel: r.priority_level, complexity: r.complexity, requestingEntitySector: r.request_type, requestType: r.request_type },
+      requiredSkills,
+      resources: data.engineResources,
+      assignments: data.engineAssignments,
+      availability: data.engineAvailability,
+      historicalProjects: data.engineHistoricalProjects,
+      org: data.orgSettings,
+      today,
+    })
+    return evaluations.length > 0 && evaluations.every((c) => !c.feasible)
+  })
+
+  if (noFeasible.length === 0) {
+    return { text: 'Every critical or high-priority request currently has at least one feasible candidate.', actions: [], contextForAi: { requests: [] } }
+  }
+  const text = `${noFeasible.length} critical/high-priority request(s) currently have no feasible resource: ${noFeasible.map((r) => r.title).join(', ')}.`
+  return {
+    text,
+    actions: noFeasible.slice(0, 6).map((r) => ({ label: r.title, path: `/allocation/${r.id}` })),
+    contextForAi: { requests: noFeasible.map((r) => r.title) },
+  }
+}
+
+function portfolioImpactAnswer(data: OrgData, question: string): CopilotAnswer {
+  const request = data.requests.find((r) => question.toLowerCase().includes(r.title.toLowerCase()))
+  if (!request) {
+    return { text: "I couldn't find a request matching that name. Try including the exact request title.", actions: [], contextForAi: {} }
+  }
+  const today = new Date()
+  const requiredSkills = data.requestSkills
+    .filter((rs) => rs.request_id === request.id)
+    .map((rs) => ({ skillId: rs.skill_id, requiredLevel: rs.required_level, importanceWeight: rs.importance_weight, mandatory: rs.mandatory }))
+  const result = buildTeamScenarios({
+    request: {
+      id: request.id,
+      estimatedEffortHours: request.estimated_effort_hours,
+      requestedDeadline: request.requested_deadline,
+      priorityLevel: request.priority_level,
+      complexity: request.complexity,
+      requestingEntitySector: request.request_type,
+      requestType: request.request_type,
+    },
+    requiredSkills,
+    resources: data.engineResources,
+    assignments: data.engineAssignments,
+    availability: data.engineAvailability,
+    historicalProjects: data.engineHistoricalProjects,
+    org: data.orgSettings,
+    today,
+  })
+  const top = result.scenarios[0]
+  const impact = top
+    ? calculatePortfolioImpact({
+        scenario: top,
+        requestId: request.id,
+        requestDeadline: request.requested_deadline,
+        allResources: data.engineResources,
+        allAssignments: data.engineAssignments,
+        availability: data.engineAvailability,
+        org: data.orgSettings,
+        today,
+      })
+    : null
+
+  if (!impact) {
+    return {
+      text: `${request.title} has no feasible allocation scenario yet, so there is no portfolio impact to assess.`,
+      actions: [{ label: request.title, path: `/allocation/${request.id}` }],
+      contextForAi: {},
+    }
+  }
+  const text = `Allocating the recommended scenario for ${request.title} would move overloaded resources in its capability pool from ${impact.overloadedResourcesBefore} to ${impact.overloadedResourcesAfter}, and relevant remaining capacity from ${Math.round(impact.relevantRemainingCapacityBeforeHours)}h to ${Math.round(impact.relevantRemainingCapacityAfterHours)}h.`
+  return { text, actions: [{ label: request.title, path: `/allocation/${request.id}` }], contextForAi: { impact } }
+}
+
 export function answerDeterministically(question: string, data: OrgData): CopilotAnswer {
   const q = question.toLowerCase()
   if (q.includes('capacity') && (q.includes('who') || q.includes('week'))) return whoHasCapacity(data)
   if (q.includes('risk') && (q.includes('project') || q.includes('most'))) return mostAtRisk(data)
   if (q.includes('overloaded') || q.includes('who is over')) return overloadedEmployees(data)
+  if ((q.includes('capacity') && q.includes('pressure')) || (q.includes('capab') && q.includes('constrain'))) return capacityPressureAnswer(data)
+  if (q.includes('critical') && q.includes('feasible')) return criticalRequestsNoFeasible(data)
+  if (q.includes('portfolio impact')) return portfolioImpactAnswer(data, question)
   if (q.includes('skill') || q.includes('who has')) return skillSearch(data, question)
   if (q.includes('accept') && q.includes('urgent')) return canAcceptUrgentRequest(data)
   if (q.includes('why') && q.includes('risk')) return whyHighRisk(data, question)

@@ -20,8 +20,8 @@ interface Message {
 }
 
 const SUGGESTED = [
-  'Who has capacity this week?',
-  'Which projects are most at risk?',
+  'Where are our biggest capacity pressures?',
+  'Which critical requests have no feasible resources?',
   'Which employees are overloaded?',
   'Can we accept another urgent request this month?',
 ]

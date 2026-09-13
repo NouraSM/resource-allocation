@@ -7,7 +7,9 @@ import { ProgressBar } from '@/components/ui/progress'
 import { riskTone } from '@/lib/statusDisplay'
 import { useI18n } from '@/lib/i18n'
 import type { TeamScenario } from '@/engine/teamBuilder'
+import type { PortfolioImpact } from '@/engine/portfolioImpact'
 import type { ScenarioBadgeKey } from '@/lib/allocationDisplay'
+import { PortfolioImpactPanel } from './PortfolioImpactPanel'
 import { cn } from '@/lib/utils'
 
 const BADGE_META: Record<ScenarioBadgeKey, { icon: typeof Star; labelKey: string }> = {
@@ -24,6 +26,7 @@ export function ScenarioCard({
   onModify,
   onWhatIf,
   canManage,
+  portfolioImpact,
 }: {
   scenario: TeamScenario
   badges: ScenarioBadgeKey[]
@@ -31,6 +34,7 @@ export function ScenarioCard({
   onModify: () => void
   onWhatIf: () => void
   canManage: boolean
+  portfolioImpact?: PortfolioImpact | null
 }) {
   const { t } = useI18n()
   const [showRationale, setShowRationale] = useState(false)
@@ -67,6 +71,8 @@ export function ScenarioCard({
             <Badge tone={riskTone[scenario.deliveryRisk.severity]}>{t(`risk.${scenario.deliveryRisk.severity}`)}</Badge>
           </div>
         </div>
+
+        {portfolioImpact !== undefined && <PortfolioImpactPanel impact={portfolioImpact} />}
 
         <div className="space-y-2">
           {scenario.members.length === 0 && <p className="text-xs text-slate-400">{t('allocation.notFeasible')}</p>}

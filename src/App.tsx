@@ -10,6 +10,7 @@ import { AllocationWorkspace } from '@/pages/AllocationWorkspace'
 import { Resources } from '@/pages/Resources'
 import { ResourceProfile } from '@/pages/ResourceProfile'
 import { Portfolio } from '@/pages/Portfolio'
+import { CapacityOutlook } from '@/pages/CapacityOutlook'
 import { Copilot } from '@/pages/Copilot'
 import { Notifications } from '@/pages/Notifications'
 import { AuditLog } from '@/pages/AuditLog'
@@ -64,6 +65,14 @@ function App() {
           element={
             <ProtectedRoute roles={['admin', 'resource_manager', 'executive_viewer']}>
               <Portfolio />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/capacity-outlook"
+          element={
+            <ProtectedRoute roles={['admin', 'resource_manager', 'executive_viewer']}>
+              <CapacityOutlook />
             </ProtectedRoute>
           }
         />

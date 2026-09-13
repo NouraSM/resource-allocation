@@ -13,6 +13,22 @@ import type { DeliveryRiskResult } from './risk'
 const MIN_SENIORITY_BY_COMPLEXITY: Record<string, number> = { low: 1, medium: 2, high: 3, very_high: 4 }
 const MAX_TEAM_SIZE = 5
 
+/**
+ * How a scenario's overall team score is weighted across its component
+ * dimensions. Exported (rather than left as inline literals) so the
+ * Settings "Current Organization Policy" panel can display the real
+ * weights driving decisions instead of a description that could drift
+ * out of sync with the engine.
+ */
+export const TEAM_SCORE_WEIGHTS = {
+  skillCoverage: 0.3,
+  capacity: 0.25,
+  priorityAlignment: 0.15,
+  loadBalance: 0.15,
+  seniorityMix: 0.1,
+  continuity: 0.05,
+} as const
+
 export interface TeamBuilderRequest {
   id: string
   estimatedEffortHours: number
@@ -254,12 +270,12 @@ function toScenario(
   })
 
   const teamScore =
-    skillCoverageScore * 0.3 +
-    capacityScore * 0.25 +
-    priorityAlignmentScore * 0.15 +
-    loadBalanceScore * 0.15 +
-    Math.min(100, seniorityMixScore) * 0.1 +
-    continuityScore * 0.05
+    skillCoverageScore * TEAM_SCORE_WEIGHTS.skillCoverage +
+    capacityScore * TEAM_SCORE_WEIGHTS.capacity +
+    priorityAlignmentScore * TEAM_SCORE_WEIGHTS.priorityAlignment +
+    loadBalanceScore * TEAM_SCORE_WEIGHTS.loadBalance +
+    Math.min(100, seniorityMixScore) * TEAM_SCORE_WEIGHTS.seniorityMix +
+    continuityScore * TEAM_SCORE_WEIGHTS.continuity
 
   const assignmentCoverageScore = calculateCapacityScore(totalAllocatedHours, request.estimatedEffortHours)
   const deliveryRisk = calculateDeliveryRisk({

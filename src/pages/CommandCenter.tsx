@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { CheckCircle2, Flag } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Gauge, Users, Workflow } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
 import { useOrgData } from '@/hooks/useOrgData'
@@ -9,17 +10,22 @@ import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { HeroMetric, StatInline } from '@/components/dashboard/KpiCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import {
-  commandCenterKpis,
-  computeResourceUtilizations,
-  departmentCapacity,
-  deriveRequestRiskSeverities,
-  executiveAttentionRequests,
-  priorityBacklog,
-  upcomingDeadlines,
-} from '@/engine/dashboardMetrics'
+import { commandCenterKpis, computeResourceUtilizations, departmentCapacity, priorityBacklog, upcomingDeadlines } from '@/engine/dashboardMetrics'
+import { deriveExecutiveDecisions } from '@/engine/executiveDecisions'
+import type { ExecutiveDecisionType } from '@/engine/executiveDecisions'
 import { formatDate, formatPercent } from '@/lib/utils'
-import { priorityTone, riskTone, PROMINENT_PRIORITIES } from '@/lib/statusDisplay'
+import { priorityTone, PROMINENT_PRIORITIES } from '@/lib/statusDisplay'
+
+const DECISION_ICON: Record<ExecutiveDecisionType, LucideIcon> = {
+  capacity_pressure: Gauge,
+  allocation_decision: Workflow,
+  workload_pressure: Users,
+}
+const DECISION_LABEL_KEY: Record<ExecutiveDecisionType, string> = {
+  capacity_pressure: 'commandCenter.decisionTypeCapacityPressure',
+  allocation_decision: 'commandCenter.decisionTypeAllocationDecision',
+  workload_pressure: 'commandCenter.decisionTypeWorkloadPressure',
+}
 
 export function CommandCenter() {
   const { t, locale } = useI18n()
@@ -44,13 +50,22 @@ export function CommandCenter() {
     )
     const availableCapacityNext2Weeks = resourceUtilizations.reduce((sum, r) => sum + Math.max(0, r.availableCapacityHours), 0)
     const kpis = commandCenterKpis({ requests: data.requests, assignments: data.assignments, resourceUtilizations, availableCapacityNext2Weeks })
-    const severityByRequest = deriveRequestRiskSeverities(data.requests, data.risks)
-    const attentionRequests = executiveAttentionRequests(data.requests, severityByRequest)
     const deadlines = upcomingDeadlines(data.requests, today)
     const deptCapacity = departmentCapacity(resourceUtilizations)
     const backlog = priorityBacklog(data.requests, data.assignments)
+    const decisions = deriveExecutiveDecisions({
+      requests: data.requests,
+      requestSkills: data.requestSkills,
+      skills: data.skills,
+      resources: data.engineResources,
+      assignments: data.engineAssignments,
+      availability: data.engineAvailability,
+      historicalProjects: data.engineHistoricalProjects,
+      org: data.orgSettings,
+      today,
+    })
 
-    return { kpis, attentionRequests, deadlines, deptCapacity, backlog, severityByRequest }
+    return { kpis, decisions, deadlines, deptCapacity, backlog }
   }, [data, today])
 
   if (loading) {
@@ -75,7 +90,7 @@ export function CommandCenter() {
     )
   }
 
-  const { kpis, attentionRequests, deadlines, deptCapacity, backlog } = computed
+  const { kpis, decisions, deadlines, deptCapacity, backlog } = computed
 
   // deptCapacity is sorted by avgUtilization descending, so [0] is already the
   // department under the most pressure — highlight it only if it's actually
@@ -115,7 +130,7 @@ export function CommandCenter() {
           <StatInline label={t('commandCenter.upcomingDeadlines')} value={deadlines.length} />
         </section>
 
-        {attentionRequests.length === 0 ? (
+        {decisions.length === 0 ? (
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-slate-300" />
             {t('commandCenter.executiveAttentionEmpty')}
@@ -123,33 +138,37 @@ export function CommandCenter() {
         ) : (
           <Card>
             <CardHeader className="items-center gap-2">
-              <Flag className="h-4 w-4 shrink-0 text-gold-600" />
               <CardTitle>{t('commandCenter.executiveAttention')}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {attentionRequests.map((r) => {
-                  const severity = computed.severityByRequest.get(r.id) ?? 'high'
-                  return (
-                    <button
-                      key={r.id}
-                      onClick={() => navigate(`/requests/${r.id}`)}
-                      className="rounded-[var(--radius-control)] bg-status-critical-bg/30 p-3 text-start transition-colors hover:bg-status-critical-bg/70"
-                    >
-                      <div className="mb-1 flex items-center justify-between gap-2">
-                        {PROMINENT_PRIORITIES.includes(r.priority_level) ? (
-                          <Badge tone={priorityTone[r.priority_level]}>{t(`priority.${r.priority_level}`)}</Badge>
-                        ) : (
-                          <span className="text-xs text-slate-500">{t(`priority.${r.priority_level}`)}</span>
-                        )}
-                        <Badge tone={riskTone[severity]}>{t(`risk.${severity}`)}</Badge>
-                      </div>
-                      <p className="text-sm font-medium text-slate-800">{r.title}</p>
-                      <p className="text-xs text-slate-500">{r.requesting_entity}</p>
-                    </button>
-                  )
-                })}
-              </div>
+            <CardContent className="space-y-2">
+              {decisions.map((decision, i) => {
+                const Icon = DECISION_ICON[decision.type]
+                return (
+                  <button
+                    key={i}
+                    onClick={() => navigate(decision.ctaPath)}
+                    className="flex w-full items-start gap-3 rounded-[var(--radius-control)] bg-slate-50 p-3.5 text-start transition-colors hover:bg-slate-100"
+                  >
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-slate-500">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <Badge tone="neutral" className="mb-1.5 font-normal normal-case text-slate-500">
+                        {t(DECISION_LABEL_KEY[decision.type])}
+                      </Badge>
+                      <p className="text-sm font-medium text-slate-800">{decision.headline}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        <span className="font-medium text-slate-400">{t('commandCenter.whyItMatters')}: </span>
+                        {decision.why}
+                      </p>
+                    </div>
+                    <span className="mt-1 flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700">
+                      {decision.ctaLabel}
+                      <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
+                    </span>
+                  </button>
+                )
+              })}
             </CardContent>
           </Card>
         )}

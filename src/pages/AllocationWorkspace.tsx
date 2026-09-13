@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, FileText } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button'
 import { buildTeamScenarios } from '@/engine/teamBuilder'
 import { calculateCapacity, utilizationStatus } from '@/engine/capacity'
 import type { TeamMember, TeamScenario } from '@/engine/teamBuilder'
+import { calculatePortfolioImpact } from '@/engine/portfolioImpact'
+import type { PortfolioImpact } from '@/engine/portfolioImpact'
 import { priorityTone } from '@/lib/statusDisplay'
 import { formatDate } from '@/lib/utils'
 import { deriveScenarioBadges, hasSameTeamComposition, hasTiedTopScenarios, summarizeInfeasibleReasons } from '@/lib/allocationDisplay'
@@ -25,6 +27,7 @@ import { ApprovalDialog } from '@/components/allocation/ApprovalDialog'
 import type { ApprovalAction, ApprovalReasonCode } from '@/components/allocation/ApprovalDialog'
 import { ModifyTeamDialog } from '@/components/allocation/ModifyTeamDialog'
 import { WhatIfDialog } from '@/components/allocation/WhatIfDialog'
+import { DecisionBrief } from '@/components/allocation/DecisionBrief'
 import { supabase } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
 
@@ -43,6 +46,7 @@ export function AllocationWorkspace() {
   const [persisted, setPersisted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [excludedOpen, setExcludedOpen] = useState(false)
+  const [briefOpen, setBriefOpen] = useState(false)
 
   useEffect(() => {
     setSelectedRequestId(requestId ?? '')
@@ -77,6 +81,30 @@ export function AllocationWorkspace() {
       today,
     })
   }, [data, request, requiredSkills, today])
+
+  // A separate lens from the request-level recommendation above: how does
+  // committing to each scenario ripple through the wider capability pool?
+  // Never used to re-rank or alter which scenario is "recommended."
+  const portfolioImpactByScenario = useMemo(() => {
+    const map = new Map<number, PortfolioImpact | null>()
+    if (!data || !request || !builderResult) return map
+    for (const scenario of builderResult.scenarios) {
+      map.set(
+        scenario.scenarioNumber,
+        calculatePortfolioImpact({
+          scenario,
+          requestId: request.id,
+          requestDeadline: request.requested_deadline,
+          allResources: data.engineResources,
+          allAssignments: data.engineAssignments,
+          availability: data.engineAvailability,
+          org: data.orgSettings,
+          today,
+        }),
+      )
+    }
+    return map
+  }, [data, request, builderResult, today])
 
   // Persist the generated recommendations once per request visit (audit trail /
   // schema fulfillment) without spamming inserts on every re-render.
@@ -235,11 +263,17 @@ export function AllocationWorkspace() {
 
   return (
     <AppShell title={t('allocation.title')} subtitle={request.title}>
-      <div className="mb-3">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <Button variant="ghost" size="sm" onClick={() => navigate('/allocation')}>
           <ArrowLeft className="h-4 w-4 rtl:-scale-x-100" />
           {t('allocation.backToQueue')}
         </Button>
+        {!blocked && canManage && (
+          <Button variant="outline" size="sm" onClick={() => setBriefOpen(true)}>
+            <FileText className="h-4 w-4" />
+            {t('decisionBrief.open')}
+          </Button>
+        )}
       </div>
       <AllocationStepper current={currentStep} />
       <div className="grid gap-4 lg:grid-cols-4">
@@ -297,6 +331,7 @@ export function AllocationWorkspace() {
                     scenario={s}
                     badges={badgesByScenario[s.scenarioNumber] ?? []}
                     canManage={!!canManage}
+                    portfolioImpact={portfolioImpactByScenario.get(s.scenarioNumber)}
                     onApprove={() => {
                       setActiveScenario(s)
                       setDialogAction('approve')
@@ -366,6 +401,40 @@ export function AllocationWorkspace() {
           )}
         </div>
       </div>
+
+      {builderResult && !blocked && (
+        <DecisionBrief
+          open={briefOpen}
+          onClose={() => setBriefOpen(false)}
+          request={request}
+          scenarios={builderResult.scenarios}
+          recommendedScenarioNumber={recommendedScenario}
+          portfolioImpactByScenario={portfolioImpactByScenario}
+          canManage={!!canManage}
+          onCompare={() => setBriefOpen(false)}
+          onModify={() => {
+            const scenario = builderResult.scenarios.find((s) => s.scenarioNumber === recommendedScenario)
+            if (!scenario) return
+            setActiveScenario(scenario)
+            setModifyOpen(true)
+            setBriefOpen(false)
+          }}
+          onApprove={() => {
+            const scenario = builderResult.scenarios.find((s) => s.scenarioNumber === recommendedScenario)
+            if (!scenario) return
+            setActiveScenario(scenario)
+            setDialogAction('approve')
+            setBriefOpen(false)
+          }}
+          onReject={() => {
+            const scenario = builderResult.scenarios.find((s) => s.scenarioNumber === recommendedScenario)
+            if (!scenario) return
+            setActiveScenario(scenario)
+            setDialogAction('reject')
+            setBriefOpen(false)
+          }}
+        />
+      )}
 
       <ApprovalDialog
         open={dialogAction !== null}

@@ -12,6 +12,7 @@ import { Input, Label, Select } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ProgressBar } from '@/components/ui/progress'
 import { supabase } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
 import { toCsv, downloadCsv } from '@/lib/csv'
@@ -19,6 +20,38 @@ import { importTemplates } from '@/lib/importTemplates'
 import { CsvImportPanel } from '@/components/settings/CsvImportPanel'
 import type { UserRole } from '@/types/database'
 import { computeResourceUtilizations } from '@/engine/dashboardMetrics'
+import { RESOURCE_FIT_WEIGHTS } from '@/engine/resourceFit'
+import { TEAM_SCORE_WEIGHTS } from '@/engine/teamBuilder'
+import { RISK_WEIGHTS } from '@/engine/risk'
+
+/** Turns an internal weight map into ordered {label, pct} rows for display — never expose raw constant names in the UI. */
+function weightRows(weights: Record<string, number>, labelKeys: Record<string, string>, t: (key: string) => string) {
+  return Object.entries(weights).map(([key, weight]) => ({ label: t(labelKeys[key]), pct: Math.round(weight * 100) }))
+}
+
+const CANDIDATE_SCORING_LABELS: Record<string, string> = {
+  skillMatch: 'policy.skillMatch',
+  capacity: 'policy.capacity',
+  experience: 'policy.experience',
+  deadline: 'policy.deadlineFit',
+  workloadBalance: 'policy.workloadBalance',
+  continuity: 'policy.continuity',
+}
+const SCENARIO_SCORING_LABELS: Record<string, string> = {
+  skillCoverage: 'policy.skillCoverage',
+  capacity: 'policy.capacity',
+  priorityAlignment: 'policy.priorityAlignment',
+  loadBalance: 'policy.workloadBalance',
+  seniorityMix: 'policy.seniorityMix',
+  continuity: 'policy.continuity',
+}
+const RISK_MODEL_LABELS: Record<string, string> = {
+  deadline: 'policy.deadlineRisk',
+  capacity: 'policy.capacityRisk',
+  skillGap: 'policy.skillGapRisk',
+  dependency: 'policy.dependencyRisk',
+  assignment: 'policy.assignmentRisk',
+}
 
 export function Settings() {
   const { t } = useI18n()
@@ -147,6 +180,7 @@ export function Settings() {
       <Tabs defaultValue="organization">
         <TabsList>
           <TabsTrigger value="organization">{t('settings.organization')}</TabsTrigger>
+          <TabsTrigger value="policy">{t('settings.decisionPolicy')}</TabsTrigger>
           <TabsTrigger value="users">{t('settings.users')}</TabsTrigger>
           <TabsTrigger value="skills">{t('settings.skillsCatalog')}</TabsTrigger>
           <TabsTrigger value="data">{t('settings.dataImport')}</TabsTrigger>
@@ -191,6 +225,51 @@ export function Settings() {
               <Button onClick={saveOrgSettings} disabled={savingOrg}>
                 {savingOrg ? t('common.loading') : t('common.save')}
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="policy" className="mt-4 space-y-4">
+          <p className="text-sm text-slate-600">{t('policy.intro')}</p>
+
+          <Card className="max-w-xl">
+            <CardHeader>
+              <CardTitle>{t('policy.orgConfig')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600">{t('policy.targetUtilization')}</span>
+                <span className="font-semibold text-slate-800">{Math.round(data.org.target_utilization * 100)}%</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600">{t('policy.overloadThreshold')}</span>
+                <span className="font-semibold text-slate-800">{Math.round(data.org.overload_threshold * 100)}%</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="max-w-xl">
+            <CardHeader>
+              <CardTitle>{t('policy.decisionModel')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <WeightGroup title={t('policy.candidateScoring')} rows={weightRows(RESOURCE_FIT_WEIGHTS, CANDIDATE_SCORING_LABELS, t)} />
+              <WeightGroup title={t('policy.scenarioScoring')} rows={weightRows(TEAM_SCORE_WEIGHTS, SCENARIO_SCORING_LABELS, t)} />
+              <WeightGroup title={t('policy.riskModel')} rows={weightRows(RISK_WEIGHTS, RISK_MODEL_LABELS, t)} />
+            </CardContent>
+          </Card>
+
+          <Card className="max-w-xl">
+            <CardHeader>
+              <CardTitle>{t('policy.policyBehavior')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-inside list-disc space-y-2 text-sm text-slate-600">
+                <li>{t('policy.behaviorThreshold')}</li>
+                <li>{t('policy.behaviorMandatory')}</li>
+                <li>{t('policy.behaviorSeniority')}</li>
+                <li>{t('policy.behaviorAudit')}</li>
+              </ul>
             </CardContent>
           </Card>
         </TabsContent>
@@ -293,5 +372,24 @@ export function Settings() {
       </Tabs>
       </div>
     </AppShell>
+  )
+}
+
+function WeightGroup({ title, rows }: { title: string; rows: { label: string; pct: number }[] }) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</p>
+      <div className="space-y-2">
+        {rows.map((row) => (
+          <div key={row.label}>
+            <div className="mb-0.5 flex items-center justify-between text-xs">
+              <span className="text-slate-600">{row.label}</span>
+              <span className="font-medium text-slate-700">{row.pct}%</span>
+            </div>
+            <ProgressBar value={row.pct} />
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
