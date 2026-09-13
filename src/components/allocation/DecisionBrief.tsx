@@ -1,9 +1,11 @@
 import { Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { useI18n } from '@/lib/i18n'
 import { formatDate } from '@/lib/utils'
 import { priorityTone, riskTone } from '@/lib/statusDisplay'
+import { formatScenarioScore } from '@/lib/scenarioMetrics'
 import type { TeamScenario } from '@/engine/teamBuilder'
 import type { PortfolioImpact } from '@/engine/portfolioImpact'
 import type { WorkRequest } from '@/types/database'
@@ -22,7 +24,7 @@ function describeDifference(recommended: TeamScenario, alt: TeamScenario): strin
   const biggest = dims.reduce((a, b) => (Math.abs(b.alt - b.recommended) > Math.abs(a.alt - a.recommended) ? b : a))
   const diff = biggest.alt - biggest.recommended
   if (Math.abs(diff) < 3) return 'Very similar profile to the recommended option.'
-  return `${diff > 0 ? 'Higher' : 'Lower'} ${biggest.label} (${biggest.alt.toFixed(0)} vs ${biggest.recommended.toFixed(0)}).`
+  return `${diff > 0 ? 'Higher' : 'Lower'} ${biggest.label} (${formatScenarioScore(biggest.alt)} vs ${formatScenarioScore(biggest.recommended)}).`
 }
 
 export function DecisionBrief({
@@ -87,8 +89,13 @@ export function DecisionBrief({
 
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t('decisionBrief.recommendedScenario')}</p>
-            <p className="text-lg font-semibold text-brand-700">{SCENARIO_LABEL[recommended.scenarioNumber]} · {recommended.teamScore.toFixed(0)}</p>
+            <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              {t('decisionBrief.recommendedScenario')}
+              <InfoTooltip text={t('allocation.scenarioScoreTooltip')} />
+            </p>
+            <p className="text-lg font-semibold text-brand-700">
+              {SCENARIO_LABEL[recommended.scenarioNumber]} · {formatScenarioScore(recommended.teamScore)}
+            </p>
           </div>
           <p className="text-xs text-slate-600">{recommended.members.map((m) => `${m.fullName} (${m.jobRole}, ${m.allocationPercentage}%)`).join(' · ')}</p>
         </div>
@@ -119,7 +126,7 @@ export function DecisionBrief({
               {alternatives.map((alt) => (
                 <li key={alt.scenarioNumber} className="flex items-start gap-2">
                   <Badge tone={riskTone[alt.deliveryRisk.severity]} className="mt-0.5 shrink-0">
-                    {SCENARIO_LABEL[alt.scenarioNumber]} · {alt.teamScore.toFixed(0)}
+                    {SCENARIO_LABEL[alt.scenarioNumber]} · {formatScenarioScore(alt.teamScore)}
                   </Badge>
                   <span>{describeDifference(recommended, alt)}</span>
                 </li>

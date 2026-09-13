@@ -101,7 +101,7 @@ export function deriveExecutiveDecisions(params: {
     decisions.push({
       type: 'allocation_decision',
       headline: `${request.title} has multiple feasible allocation scenarios.`,
-      why: `Alternatives range from ${Math.min(...scores).toFixed(0)} to ${Math.max(...scores).toFixed(0)} on team fit and create different portfolio-capacity impacts.`,
+      why: `Alternatives range from ${Math.min(...scores).toFixed(0)} to ${Math.max(...scores).toFixed(0)} on scenario score (0-100) and create different portfolio-capacity impacts.`,
       ctaLabel: 'Compare Scenarios',
       ctaPath: `/allocation/${request.id}`,
     })

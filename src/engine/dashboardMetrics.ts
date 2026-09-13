@@ -176,6 +176,36 @@ export function departmentCapacity(resourceUtilizations: ResourceUtilizationRow[
     .sort((a, b) => b.avgUtilization - a.avgUtilization)
 }
 
+function formatNameList(names: string[]): string {
+  if (names.length === 0) return ''
+  if (names.length === 1) return names[0]
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+}
+
+/**
+ * Deterministic, data-derived one-line management summary for the Team
+ * Capacity by Department chart — never hard-codes a department name or
+ * number, and reuses the same utilizationStatus bands (driven by the
+ * org's own target/overload thresholds) as everywhere else in the app.
+ */
+export function departmentCapacityInsight(rows: DepartmentCapacityRow[], org: Pick<OrgSettings, 'targetUtilization' | 'overloadThreshold'>): string | null {
+  if (rows.length === 0) return null
+  const withStatus = rows.map((r) => ({ ...r, status: utilizationStatus(r.avgUtilization, org) }))
+  const overCapacity = withStatus.filter((r) => r.status === 'overloaded' || r.status === 'critical').map((r) => r.department)
+  const nearCapacity = withStatus.filter((r) => r.status === 'high').map((r) => r.department)
+
+  const parts: string[] = []
+  if (overCapacity.length) parts.push(`${formatNameList(overCapacity)} ${overCapacity.length > 1 ? 'are' : 'is'} currently over capacity`)
+  if (nearCapacity.length) parts.push(`${formatNameList(nearCapacity)} ${nearCapacity.length > 1 ? 'are' : 'is'} approaching the utilization limit`)
+  if (parts.length) return `${parts.join(', while ')}.`
+
+  const healthy = withStatus.filter((r) => r.status === 'healthy' || r.status === 'underutilized')
+  if (!healthy.length) return null
+  const mostHeadroom = [...healthy].sort((a, b) => a.avgUtilization - b.avgUtilization)[0]
+  return `No departments are near capacity; ${mostHeadroom.department} retains the largest available headroom.`
+}
+
 export interface PriorityCapacityRow {
   priority: PriorityLevel
   backlogHours: number
@@ -193,4 +223,19 @@ export function priorityBacklog(requests: WorkRequest[], assignments: Assignment
     }, 0)
     return { priority, backlogHours: Math.round(backlogHours), requestCount: items.length }
   })
+}
+
+/**
+ * Deterministic, data-derived one-line management summary for the backlog
+ * chart — never hard-codes a priority level or number.
+ */
+export function priorityBacklogInsight(rows: PriorityCapacityRow[]): string | null {
+  const total = rows.reduce((sum, r) => sum + r.backlogHours, 0)
+  if (total <= 0) return null
+  const top = [...rows].sort((a, b) => b.backlogHours - a.backlogHours)[0]
+  const share = Math.round((top.backlogHours / total) * 100)
+  const label = top.priority.charAt(0).toUpperCase() + top.priority.slice(1)
+  const base = `Most backlog effort is concentrated in ${label}-priority work (${share}% of the total)`
+  const noCritical = rows.find((r) => r.priority === 'critical')?.requestCount === 0
+  return noCritical && top.priority !== 'critical' ? `${base}, while no Critical requests are currently present.` : `${base}.`
 }

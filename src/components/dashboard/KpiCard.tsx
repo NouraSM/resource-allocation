@@ -65,7 +65,7 @@ const KPI_STAT_ACCENT_CLASSES: Record<KpiStatTone, string> = {
 export function KpiStatCard({ label, value, tone = 'calm' }: { label: string; value: string | number; tone?: KpiStatTone }) {
   return (
     <Card className={cn('border-s-[3px] p-5', KPI_STAT_ACCENT_CLASSES[tone])}>
-      <p className={cn('text-[34px] font-semibold leading-none tabular-nums', KPI_STAT_NUMBER_CLASSES[tone])}>{value}</p>
+      <p className={cn('text-[38px] font-semibold leading-none tabular-nums', KPI_STAT_NUMBER_CLASSES[tone])}>{value}</p>
       <p className="mt-2 text-sm font-medium text-slate-500">{label}</p>
     </Card>
   )

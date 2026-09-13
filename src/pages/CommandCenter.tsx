@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { ArrowRight, CheckCircle2, Gauge, Users, Workflow } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
@@ -10,11 +10,21 @@ import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { KpiStatCard, StatInline } from '@/components/dashboard/KpiCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { commandCenterKpis, computeResourceUtilizations, departmentCapacity, priorityBacklog, upcomingDeadlines } from '@/engine/dashboardMetrics'
+import {
+  commandCenterKpis,
+  computeResourceUtilizations,
+  departmentCapacity,
+  departmentCapacityInsight,
+  priorityBacklog,
+  priorityBacklogInsight,
+  upcomingDeadlines,
+} from '@/engine/dashboardMetrics'
+import { utilizationStatus } from '@/engine/capacity'
 import { deriveExecutiveDecisions } from '@/engine/executiveDecisions'
 import type { ExecutiveDecisionType } from '@/engine/executiveDecisions'
-import { formatDate, formatPercent, cn } from '@/lib/utils'
+import { formatDate, formatHours, formatNumber, formatPercent, cn } from '@/lib/utils'
 import { priorityTone, PROMINENT_PRIORITIES } from '@/lib/statusDisplay'
+import type { PriorityLevel } from '@/types/database'
 
 const DECISION_ICON: Record<ExecutiveDecisionType, LucideIcon> = {
   capacity_pressure: Gauge,
@@ -42,6 +52,25 @@ const DECISION_ICON_CLASSES: Record<ExecutiveDecisionType, string> = {
   workload_pressure: 'bg-status-critical-bg text-status-critical',
 }
 
+// Chart fills (Recharts needs literal color values, not Tailwind classes) —
+// matching the same semantic hex values used for badges/text elsewhere
+// (src/index.css), so a department's bar color always agrees with what
+// utilizationTone/utilizationTextClass would show for the same status.
+const UTILIZATION_CHART_COLOR: Record<string, string> = {
+  underutilized: '#94a3b8',
+  healthy: '#1a7f4f',
+  high: '#b5760a',
+  overloaded: '#b3261e',
+  critical: '#b3261e',
+}
+
+const PRIORITY_CHART_COLOR: Record<PriorityLevel, string> = {
+  critical: '#b3261e',
+  high: '#b5760a',
+  medium: '#1f4c7a',
+  low: '#5f6b7a',
+}
+
 export function CommandCenter() {
   const { t, locale } = useI18n()
   const navigate = useNavigate()
@@ -67,7 +96,9 @@ export function CommandCenter() {
     const kpis = commandCenterKpis({ requests: data.requests, assignments: data.assignments, resourceUtilizations, availableCapacityNext2Weeks })
     const deadlines = upcomingDeadlines(data.requests, today)
     const deptCapacity = departmentCapacity(resourceUtilizations)
+    const deptCapacityInsight = departmentCapacityInsight(deptCapacity, data.orgSettings)
     const backlog = priorityBacklog(data.requests, data.assignments)
+    const backlogInsight = priorityBacklogInsight(backlog)
     const decisions = deriveExecutiveDecisions({
       requests: data.requests,
       requestSkills: data.requestSkills,
@@ -80,7 +111,7 @@ export function CommandCenter() {
       today,
     })
 
-    return { kpis, decisions, deadlines, deptCapacity, backlog }
+    return { kpis, decisions, deadlines, deptCapacity, deptCapacityInsight, backlog, backlogInsight }
   }, [data, today])
 
   if (loading) {
@@ -105,13 +136,7 @@ export function CommandCenter() {
     )
   }
 
-  const { kpis, decisions, deadlines, deptCapacity, backlog } = computed
-
-  // deptCapacity is sorted by avgUtilization descending, so [0] is already the
-  // department under the most pressure — highlight it only if it's actually
-  // near or over the org's overload threshold; otherwise every bar stays neutral.
-  const overloadThreshold = data.orgSettings.overloadThreshold
-  const highlightDept = deptCapacity[0] && deptCapacity[0].avgUtilization >= overloadThreshold - 0.05 ? deptCapacity[0].department : null
+  const { kpis, decisions, deadlines, deptCapacity, deptCapacityInsight, backlog, backlogInsight } = computed
 
   // Four peer executive indicators — same card, same number size/weight, same
   // label size, always in the same fixed order so the layout never reshuffles
@@ -218,26 +243,47 @@ export function CommandCenter() {
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex-col items-start gap-0.5">
               <CardTitle>{t('commandCenter.teamCapacity')}</CardTitle>
+              <p className="text-xs text-slate-400">{t('commandCenter.teamCapacityHint')}</p>
             </CardHeader>
             <CardContent>
               {deptCapacity.length === 0 ? (
                 <p className="text-sm text-slate-500">{t('common.noData')}</p>
               ) : (
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={deptCapacity.map((d) => ({ ...d, avgUtilizationPct: Math.round(d.avgUtilization * 100) }))} layout="vertical" margin={{ left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                    <XAxis type="number" domain={[0, 120]} tickFormatter={(v) => `${v}%`} fontSize={11} />
-                    <YAxis type="category" dataKey="department" width={140} fontSize={11} />
-                    <Tooltip formatter={(v) => `${v}%`} />
-                    <Bar dataKey="avgUtilizationPct" radius={[0, 4, 4, 0]}>
-                      {deptCapacity.map((d) => (
-                        <Cell key={d.department} fill={d.department === highlightDept ? '#114c07' : '#94a3b8'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <>
+                  <ResponsiveContainer width="100%" height={Math.max(180, deptCapacity.length * 34 + 30)}>
+                    <BarChart
+                      data={deptCapacity.map((d) => ({ ...d, avgUtilizationPct: Math.round(d.avgUtilization * 100) }))}
+                      layout="vertical"
+                      margin={{ top: 4, right: 40, bottom: 24, left: 8 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                      <XAxis
+                        type="number"
+                        domain={[0, 120]}
+                        tickFormatter={(v) => `${v}%`}
+                        fontSize={11}
+                        label={{ value: t('commandCenter.utilizationAxisLabel'), position: 'insideBottom', offset: -8, fontSize: 11, fill: '#94a3b8' }}
+                      />
+                      <YAxis type="category" dataKey="department" width={140} fontSize={11} />
+                      <Tooltip formatter={(v) => `${v}%`} />
+                      <ReferenceLine
+                        x={100}
+                        stroke="#94a3b8"
+                        strokeDasharray="4 4"
+                        label={{ value: t('commandCenter.capacityLimitLabel'), position: 'insideTopRight', fontSize: 10, fill: '#64748b' }}
+                      />
+                      <Bar dataKey="avgUtilizationPct" radius={[0, 4, 4, 0]}>
+                        {deptCapacity.map((d) => (
+                          <Cell key={d.department} fill={UTILIZATION_CHART_COLOR[utilizationStatus(d.avgUtilization, data.orgSettings)]} />
+                        ))}
+                        <LabelList dataKey="avgUtilizationPct" position="right" formatter={(v) => `${v}%`} fontSize={11} fill="#475569" />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                  {deptCapacityInsight && <p className="mt-1 text-xs text-slate-500">{deptCapacityInsight}</p>}
+                </>
               )}
             </CardContent>
           </Card>
@@ -248,15 +294,29 @@ export function CommandCenter() {
             <CardTitle>{t('commandCenter.priorityVsCapacity')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={145}>
-              <BarChart data={backlog.map((b) => ({ ...b, label: t(`priority.${b.priority}`) }))}>
+            <ResponsiveContainer width="100%" height={170}>
+              <BarChart data={backlog.map((b) => ({ ...b, label: t(`priority.${b.priority}`) }))} margin={{ top: 16, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="label" fontSize={12} />
-                <YAxis fontSize={11} />
-                <Tooltip formatter={(v) => `${v} ${t('common.hours')}`} />
-                <Bar dataKey="backlogHours" radius={[4, 4, 0, 0]} fill="#94a3b8" />
+                <XAxis
+                  dataKey="label"
+                  fontSize={12}
+                  label={{ value: t('commandCenter.priorityAxisLabel'), position: 'insideBottom', offset: -10, fontSize: 11, fill: '#94a3b8' }}
+                />
+                <YAxis
+                  fontSize={11}
+                  tickFormatter={(v: number) => formatNumber(v, locale)}
+                  label={{ value: t('commandCenter.backlogAxisLabel'), angle: -90, position: 'insideLeft', fontSize: 11, fill: '#94a3b8' }}
+                />
+                <Tooltip formatter={(v) => formatHours(Number(v), locale)} />
+                <Bar dataKey="backlogHours" radius={[4, 4, 0, 0]}>
+                  {backlog.map((b) => (
+                    <Cell key={b.priority} fill={PRIORITY_CHART_COLOR[b.priority]} />
+                  ))}
+                  <LabelList dataKey="backlogHours" position="top" formatter={(v) => formatNumber(Number(v), locale)} fontSize={11} fill="#475569" />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
+            {backlogInsight && <p className="mt-1 text-xs text-slate-500">{backlogInsight}</p>}
           </CardContent>
         </Card>
       </div>

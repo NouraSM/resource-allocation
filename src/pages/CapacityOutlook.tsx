@@ -9,10 +9,11 @@ import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
-import { HeroMetric, StatInline } from '@/components/dashboard/KpiCard'
+import { KpiStatCard, StatInline } from '@/components/dashboard/KpiCard'
 import { calculateCapabilityPressure } from '@/engine/capacityOutlook'
 import { computeResourceUtilizations, departmentCapacity } from '@/engine/dashboardMetrics'
 import { utilizationTone } from '@/lib/statusDisplay'
+import { formatHours } from '@/lib/utils'
 
 const HORIZONS = [
   { days: 28, key: 'horizon4' as const },
@@ -25,7 +26,7 @@ const PRESSURE_STATUSES = new Set(['high', 'overloaded', 'critical'])
 const CRITICAL_STATUSES = new Set(['overloaded', 'critical'])
 
 export function CapacityOutlook() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const navigate = useNavigate()
   const { data, loading, error, refetch } = useOrgData()
   const [horizonDays, setHorizonDays] = useState(56)
@@ -100,23 +101,22 @@ export function CapacityOutlook() {
           </p>
         </div>
 
-        <section className="flex flex-wrap gap-x-14 gap-y-6">
-          <HeroMetric label={t('capacityOutlook.capacityPressure')} value={pressureCount} tone={pressureCount > 0 ? 'attention' : 'calm'} size="lg" />
-          <div className="flex flex-wrap gap-x-10 gap-y-4">
-            <HeroMetric label={t('capacityOutlook.criticalGaps')} value={criticalCount} tone={criticalCount > 0 ? 'critical' : 'calm'} size="sm" />
-            <HeroMetric
-              label={`${t('capacityOutlook.upcomingDemand')} — ${horizonLabel}`}
-              value={`${Math.round(totalDemand)}${t('capacityOutlook.estHours')}`}
-              tone="calm"
-              size="sm"
-            />
-            <HeroMetric
-              label={`${t('capacityOutlook.availableCapacity')} — ${horizonLabel}`}
-              value={`${Math.round(totalAvailableCapacity)}${t('common.hours')}`}
-              tone="calm"
-              size="sm"
-            />
-          </div>
+        {/* Four peer KPIs — identical card, number size/weight, and label
+            treatment (KpiStatCard, shared with Command Center) so none of
+            the four reads as more important than the others. */}
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KpiStatCard label={t('capacityOutlook.capacityPressure')} value={pressureCount} tone={pressureCount > 0 ? 'attention' : 'calm'} />
+          <KpiStatCard label={t('capacityOutlook.criticalGaps')} value={criticalCount} tone={criticalCount > 0 ? 'critical' : 'calm'} />
+          <KpiStatCard
+            label={`${t('capacityOutlook.upcomingDemand')} — ${horizonLabel}`}
+            value={formatHours(totalDemand, locale)}
+            tone="calm"
+          />
+          <KpiStatCard
+            label={`${t('capacityOutlook.availableCapacity')} — ${horizonLabel}`}
+            value={formatHours(totalAvailableCapacity, locale)}
+            tone="calm"
+          />
         </section>
 
         <Card>
@@ -145,8 +145,8 @@ export function CapacityOutlook() {
                   <TR key={row.skillId}>
                     <TD className="font-medium text-slate-800">{row.skillName}</TD>
                     <TD>{row.requestCount}</TD>
-                    <TD>{Math.round(row.estimatedDemandHours)}{t('capacityOutlook.estHours')}</TD>
-                    <TD className={row.availableCapacityHours < 0 ? 'font-semibold text-status-critical' : ''}>{Math.round(row.availableCapacityHours)}{t('common.hours')}</TD>
+                    <TD>{formatHours(row.estimatedDemandHours, locale)}</TD>
+                    <TD className={row.availableCapacityHours < 0 ? 'font-semibold text-status-critical' : ''}>{formatHours(row.availableCapacityHours, locale)}</TD>
                     <TD>
                       {row.qualifiedResourceCount}
                       {row.qualifiedResourceCount > 0 && (

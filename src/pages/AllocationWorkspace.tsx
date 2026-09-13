@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, FileText } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileText } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { useI18n } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
@@ -16,7 +16,7 @@ import { calculatePortfolioImpact } from '@/engine/portfolioImpact'
 import type { PortfolioImpact } from '@/engine/portfolioImpact'
 import { priorityTone } from '@/lib/statusDisplay'
 import { formatDate } from '@/lib/utils'
-import { deriveScenarioBadges, hasSameTeamComposition, hasTiedTopScenarios, summarizeInfeasibleReasons } from '@/lib/allocationDisplay'
+import { deriveScenarioBadges, hasSameTeamComposition, hasTiedTopScenarios, isReviewStatus, summarizeInfeasibleReasons } from '@/lib/allocationDisplay'
 import { ScenarioCard } from '@/components/allocation/ScenarioCard'
 import { ScenarioCompareTable } from '@/components/allocation/ScenarioCompareTable'
 import { EligibleRequestsPanel } from '@/components/allocation/EligibleRequestsPanel'
@@ -39,6 +39,12 @@ export function AllocationWorkspace() {
   const { data, loading, error, refetch } = useOrgData()
 
   const [selectedRequestId, setSelectedRequestId] = useState(requestId ?? '')
+  // Arriving via a direct URL (e.g. RequestDetail's "Generate Allocation" button,
+  // a Kanban CTA, or a Command Center decision link) is itself an explicit
+  // allocation action, so it goes straight to Scenarios. Selecting a request
+  // from the queue below defaults to just inspecting it (Step 1 — Request)
+  // until an explicit "Generate Scenarios" / "Review / Re-optimize" action is taken.
+  const [stage, setStage] = useState<'request' | 'scenarios'>(requestId ? 'scenarios' : 'request')
   const [activeScenario, setActiveScenario] = useState<TeamScenario | null>(null)
   const [dialogAction, setDialogAction] = useState<ApprovalAction | null>(null)
   const [modifyOpen, setModifyOpen] = useState(false)
@@ -50,7 +56,13 @@ export function AllocationWorkspace() {
 
   useEffect(() => {
     setSelectedRequestId(requestId ?? '')
+    setStage(requestId ? 'scenarios' : 'request')
   }, [requestId])
+
+  function handleQueueSelect(id: string, intent: 'inspect' | 'scenarios') {
+    setSelectedRequestId(id)
+    setStage(intent === 'scenarios' ? 'scenarios' : 'request')
+  }
 
   const today = useMemo(() => new Date(), [])
 
@@ -61,7 +73,7 @@ export function AllocationWorkspace() {
   )
 
   const builderResult = useMemo(() => {
-    if (!data || !request) return null
+    if (!data || !request || stage !== 'scenarios') return null
     return buildTeamScenarios({
       request: {
         id: request.id,
@@ -80,7 +92,7 @@ export function AllocationWorkspace() {
       org: data.orgSettings,
       today,
     })
-  }, [data, request, requiredSkills, today])
+  }, [data, request, requiredSkills, today, stage])
 
   // A separate lens from the request-level recommendation above: how does
   // committing to each scenario ripple through the wider capability pool?
@@ -251,7 +263,7 @@ export function AllocationWorkspace() {
     return (
       <AppShell title={t('allocation.title')}>
         <AllocationStepper current="request" />
-        <EligibleRequestsPanel data={data} onSelect={setSelectedRequestId} />
+        <EligibleRequestsPanel data={data} onSelect={handleQueueSelect} />
       </AppShell>
     )
   }
@@ -259,7 +271,8 @@ export function AllocationWorkspace() {
   const recommendedScenario = builderResult?.scenarios[0]?.scenarioNumber ?? 1
   const badgesByScenario = builderResult ? deriveScenarioBadges(builderResult.scenarios, recommendedScenario) : {}
   const blocked = !builderResult || builderResult.scenarios.every((s) => s.members.length === 0)
-  const currentStep: AllocationStep = blocked ? 'scenarios' : dialogAction || saving ? 'approve' : 'compare'
+  const currentStep: AllocationStep =
+    stage === 'request' ? 'request' : blocked ? 'scenarios' : dialogAction || saving ? 'approve' : 'compare'
 
   return (
     <AppShell title={t('allocation.title')} subtitle={request.title}>
@@ -315,7 +328,15 @@ export function AllocationWorkspace() {
         </Card>
 
         <div className="space-y-4 lg:col-span-3">
-          {blocked ? (
+          {stage === 'request' ? (
+            <Card className="flex flex-col items-center justify-center gap-3 p-10 text-center">
+              <p className="max-w-sm text-sm text-slate-500">{t('allocation.requestStagePrompt')}</p>
+              <Button onClick={() => setStage('scenarios')}>
+                {isReviewStatus(request.status) ? t('allocationQueue.reviewCta') : t('allocationQueue.generateCta')}
+                <ArrowRight className="h-4 w-4 rtl:-scale-x-100" />
+              </Button>
+            </Card>
+          ) : !builderResult || builderResult.scenarios.every((s) => s.members.length === 0) ? (
             <NoScenariosExplainer
               notFeasible={builderResult?.notFeasible ?? []}
               evaluatedCount={builderResult?.candidates.length ?? 0}

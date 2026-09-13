@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ProgressBar } from '@/components/ui/progress'
+import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { riskTone } from '@/lib/statusDisplay'
 import { useI18n } from '@/lib/i18n'
 import type { TeamScenario } from '@/engine/teamBuilder'
 import type { PortfolioImpact } from '@/engine/portfolioImpact'
 import type { ScenarioBadgeKey } from '@/lib/allocationDisplay'
 import { PortfolioImpactPanel } from './PortfolioImpactPanel'
+import { formatScenarioScore } from '@/lib/scenarioMetrics'
 import { cn } from '@/lib/utils'
 
 const BADGE_META: Record<ScenarioBadgeKey, { icon: typeof Star; labelKey: string }> = {
@@ -44,9 +46,15 @@ export function ScenarioCard({
   return (
     <Card className={cn('flex flex-col', isRecommended && 'border-gold-300 ring-1 ring-gold-100')}>
       <CardHeader className="flex-col items-start gap-2">
-        <div className="flex w-full items-center justify-between">
+        <div className="flex w-full items-start justify-between">
           <CardTitle>{t(scenarioLabelKey[scenario.scenarioNumber])}</CardTitle>
-          <p className="text-2xl font-semibold text-brand-700">{scenario.teamScore.toFixed(0)}</p>
+          <div className="text-end">
+            <p className="text-2xl font-semibold text-brand-700">{formatScenarioScore(scenario.teamScore)}</p>
+            <p className="flex items-center justify-end gap-1 text-[11px] text-slate-400">
+              {t('allocation.scenarioScore')}
+              <InfoTooltip text={t('allocation.scenarioScoreTooltip')} />
+            </p>
+          </div>
         </div>
         {badges.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
@@ -63,11 +71,14 @@ export function ScenarioCard({
       </CardHeader>
       <CardContent className="flex-1 space-y-3">
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <Metric label={t('allocation.skillCoverage')} value={scenario.skillCoverageScore} />
-          <Metric label={t('compare.capacityFeasibility')} value={scenario.capacityScore} />
-          <Metric label={t('allocation.deadlineFeasibility')} value={scenario.deadlineFeasibilityScore} />
+          <Metric label={t('allocation.skillCoverage')} tooltip={t('compare.skillCoverageTooltip')} value={scenario.skillCoverageScore} />
+          <Metric label={t('compare.capacityFeasibility')} tooltip={t('compare.capacityFeasibilityTooltip')} value={scenario.capacityScore} />
+          <Metric label={t('allocation.deadlineFeasibility')} tooltip={t('compare.deadlineFeasibilityTooltip')} value={scenario.deadlineFeasibilityScore} />
           <div>
-            <p className="mb-0.5 text-slate-500">{t('allocation.deliveryRisk')}</p>
+            <p className="mb-0.5 flex items-center gap-1 text-slate-500">
+              {t('allocation.deliveryRisk')}
+              <InfoTooltip text={t('compare.deliveryRiskTooltip')} />
+            </p>
             <Badge tone={riskTone[scenario.deliveryRisk.severity]}>{t(`risk.${scenario.deliveryRisk.severity}`)}</Badge>
           </div>
         </div>
@@ -87,7 +98,7 @@ export function ScenarioCard({
               </div>
               <div className="mt-1 grid grid-cols-3 gap-1 text-[11px] text-slate-500">
                 <span>{m.allocationPercentage}% · {m.allocatedHours}h</span>
-                <span>{t('allocation.skillFit')}: {m.skillFitScore.toFixed(0)}</span>
+                <span>{t('allocation.skillFit')}: {formatScenarioScore(m.skillFitScore)}</span>
                 <span className={m.projectedUtilization > 100 ? 'font-semibold text-status-critical' : ''}>
                   {t('allocation.projectedUtilization')}: {m.projectedUtilization.toFixed(0)}%
                 </span>
@@ -149,12 +160,15 @@ export function ScenarioCard({
   )
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({ label, tooltip, value }: { label: string; tooltip: string; value: number }) {
   return (
     <div>
       <p className="mb-0.5 flex items-center justify-between text-slate-500">
-        <span>{label}</span>
-        <span className="font-medium text-slate-700">{value.toFixed(0)}</span>
+        <span className="flex items-center gap-1">
+          {label}
+          <InfoTooltip text={tooltip} />
+        </span>
+        <span className="font-medium text-slate-700">{formatScenarioScore(value)}</span>
       </p>
       <ProgressBar value={value} />
     </div>

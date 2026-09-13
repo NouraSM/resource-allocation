@@ -3,9 +3,11 @@ import { useI18n } from '@/lib/i18n'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { InfoTooltip } from '@/components/ui/info-tooltip'
 import type { TeamScenario } from '@/engine/teamBuilder'
 import type { ScenarioBadgeKey } from '@/lib/allocationDisplay'
 import { riskTone } from '@/lib/statusDisplay'
+import { formatScenarioScore } from '@/lib/scenarioMetrics'
 import { cn } from '@/lib/utils'
 
 const BADGE_META: Record<ScenarioBadgeKey, { icon: typeof Star; labelKey: string }> = {
@@ -37,14 +39,17 @@ export function ScenarioCompareTable({
   const avgUtilization = (s: TeamScenario) =>
     s.members.length ? s.members.reduce((sum, m) => sum + m.projectedUtilization, 0) / s.members.length : 0
 
-  // "higher is better" metric rows get the best cell(s) highlighted
-  const higherIsBetterRows: { label: string; value: (s: TeamScenario) => number }[] = [
-    { label: t('allocation.teamFit'), value: (s) => s.teamScore },
-    { label: t('allocation.skillCoverage'), value: (s) => s.skillCoverageScore },
-    { label: t('compare.capacityFeasibility'), value: (s) => s.capacityScore },
-    { label: t('allocation.deadlineFeasibility'), value: (s) => s.deadlineFeasibilityScore },
-    { label: t('compare.seniorityCoverage'), value: (s) => s.seniorityMixScore },
-    { label: t('compare.relevantExperience'), value: (s) => s.continuityScore },
+  // "higher is better" metric rows get the best cell(s) highlighted. Every
+  // value here is one of teamBuilder's 0-100 normalized scores (never a
+  // literal percentage) — formatted uniformly via formatScenarioScore so
+  // the same figure never reads as "%" here and a bare number elsewhere.
+  const higherIsBetterRows: { label: string; tooltip: string; value: (s: TeamScenario) => number }[] = [
+    { label: t('allocation.scenarioScore'), tooltip: t('allocation.scenarioScoreTooltip'), value: (s) => s.teamScore },
+    { label: t('allocation.skillCoverage'), tooltip: t('compare.skillCoverageTooltip'), value: (s) => s.skillCoverageScore },
+    { label: t('compare.capacityFeasibility'), tooltip: t('compare.capacityFeasibilityTooltip'), value: (s) => s.capacityScore },
+    { label: t('allocation.deadlineFeasibility'), tooltip: t('compare.deadlineFeasibilityTooltip'), value: (s) => s.deadlineFeasibilityScore },
+    { label: t('compare.seniorityCoverage'), tooltip: t('compare.seniorityCoverageTooltip'), value: (s) => s.seniorityMixScore },
+    { label: t('compare.continuity'), tooltip: t('compare.continuityTooltip'), value: (s) => s.continuityScore },
   ]
 
   return (
@@ -81,23 +86,38 @@ export function ScenarioCompareTable({
             const max = Math.max(...values)
             return (
               <TR key={row.label}>
-                <TD className="font-medium text-slate-600">{row.label}</TD>
+                <TD className="font-medium text-slate-600">
+                  <span className="inline-flex items-center gap-1">
+                    {row.label}
+                    <InfoTooltip text={row.tooltip} />
+                  </span>
+                </TD>
                 {scenarios.map((s, i) => (
                   <TD key={s.scenarioNumber} className={cn(isUniqueBest(values, values[i], max) && 'font-semibold text-status-healthy')}>
-                    {values[i].toFixed(0)}
+                    {formatScenarioScore(values[i])}
                   </TD>
                 ))}
               </TR>
             )
           })}
           <TR>
-            <TD className="font-medium text-slate-600">{t('compare.avgUtilization')}</TD>
+            <TD className="font-medium text-slate-600">
+              <span className="inline-flex items-center gap-1">
+                {t('compare.avgUtilization')}
+                <InfoTooltip text={t('compare.avgUtilizationTooltip')} />
+              </span>
+            </TD>
             {scenarios.map((s) => (
               <TD key={s.scenarioNumber}>{avgUtilization(s).toFixed(0)}%</TD>
             ))}
           </TR>
           <TR>
-            <TD className="font-medium text-slate-600">{t('allocation.deliveryRisk')}</TD>
+            <TD className="font-medium text-slate-600">
+              <span className="inline-flex items-center gap-1">
+                {t('allocation.deliveryRisk')}
+                <InfoTooltip text={t('compare.deliveryRiskTooltip')} />
+              </span>
+            </TD>
             {(() => {
               const ranks = scenarios.map((s) => RISK_RANK[s.deliveryRisk.severity])
               const minRank = Math.min(...ranks)

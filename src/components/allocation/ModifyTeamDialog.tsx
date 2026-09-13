@@ -4,6 +4,7 @@ import { Dialog } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
 import { useI18n } from '@/lib/i18n'
+import { formatScenarioScore } from '@/lib/scenarioMetrics'
 import type { TeamMember } from '@/engine/teamBuilder'
 import type { CandidateEvaluation } from '@/engine/teamBuilder'
 
@@ -88,7 +89,7 @@ export function ModifyTeamDialog({
             <option value="">{t('common.search')}…</option>
             {available.map((c) => (
               <option key={c.resource.id} value={c.resource.id}>
-                {c.resource.fullName} ({c.soloFitScore.toFixed(0)})
+                {c.resource.fullName} ({formatScenarioScore(c.soloFitScore)})
               </option>
             ))}
           </Select>

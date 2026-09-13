@@ -20,7 +20,14 @@ import type { RequestStatus } from '@/types/database'
 // such as Work Requests, where the same status can render quietly).
 const PROMINENT_STATUSES: readonly RequestStatus[] = ['at_risk', 'ready_for_allocation']
 
-export function EligibleRequestsPanel({ data, onSelect }: { data: OrgData; onSelect: (id: string) => void }) {
+export function EligibleRequestsPanel({
+  data,
+  onSelect,
+}: {
+  data: OrgData
+  /** 'inspect' opens the request itself (Step 1); 'scenarios' is an explicit allocation action that jumps straight to Scenarios. */
+  onSelect: (id: string, intent: 'inspect' | 'scenarios') => void
+}) {
   const { t, locale } = useI18n()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
@@ -58,7 +65,7 @@ export function EligibleRequestsPanel({ data, onSelect }: { data: OrgData; onSel
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-[200px]"
           />
-          <Select value="" onChange={(e) => e.target.value && onSelect(e.target.value)} className="max-w-[220px]">
+          <Select value="" onChange={(e) => e.target.value && onSelect(e.target.value, 'inspect')} className="max-w-[220px]">
             <option value="">{t('allocationQueue.jumpTo')}</option>
             {eligible.map((r) => (
               <option key={r.id} value={r.id}>
@@ -100,7 +107,7 @@ export function EligibleRequestsPanel({ data, onSelect }: { data: OrgData; onSel
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          onSelect(r.id)
+                          onSelect(r.id, 'inspect')
                         }}
                         className="font-medium text-slate-800 hover:text-brand-700 hover:underline"
                       >
@@ -135,7 +142,7 @@ export function EligibleRequestsPanel({ data, onSelect }: { data: OrgData; onSel
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          onSelect(r.id)
+                          onSelect(r.id, 'scenarios')
                         }}
                         className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
                       >
@@ -147,7 +154,7 @@ export function EligibleRequestsPanel({ data, onSelect }: { data: OrgData; onSel
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation()
-                          onSelect(r.id)
+                          onSelect(r.id, 'scenarios')
                         }}
                       >
                         {t('allocationQueue.generateCta')}
