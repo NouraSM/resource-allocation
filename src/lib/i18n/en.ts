@@ -66,7 +66,7 @@ const en = {
   },
   auth: {
     title: 'Sign in to RA Copilot',
-    subtitle: 'Resource Allocation Copilot for Government Consulting Centers',
+    subtitle: 'Resource Allocation Copilot',
     emailPlaceholder: 'you@organization.gov',
     demoAccounts: 'Demo accounts',
     signInError: 'Invalid email or password',
